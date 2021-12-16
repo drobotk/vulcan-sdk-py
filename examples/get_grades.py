@@ -13,9 +13,9 @@ async def main():
 
         # get all students from all schools available on this account
         students = await vulcan.get_students()
-        
-        for student in students:
-            print(repr(student))
+
+        # use the first student available - this is usually the current year student
+        student = students[0]
 
         # fetching grades of a student
         data = await student.get_grades()
