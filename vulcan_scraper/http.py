@@ -100,7 +100,7 @@ class HTTP:
             symbol = symbol,
             instance = instance
         )
-        data = await self.api_request("GET", url, headers = headers )
+        data = await self.api_request("POST", url, headers = headers )
         return [ StudentRegister( **x ) for x in data ]
 
     async def uczen_get_grades( self, symbol: str, instance: str, headers: dict[str, str], cookies: dict[str, str], period_id: int ) -> GradesData:
@@ -110,5 +110,15 @@ class HTTP:
             symbol = symbol,
             instance = instance
         )
-        data = await self.api_request("GET", url, headers = headers, cookies = cookies, json = {"okres": period_id } )
+        data = await self.api_request("POST", url, headers = headers, cookies = cookies, json = {"okres": period_id } )
         return GradesData( **data )
+
+    async def uczen_get_notes_achievements( self, symbol: str, instance: str, headers: dict[str, str], cookies: dict[str, str] ) -> NotesAndAchievementsData:
+        url = self.build_url(
+            module = "uonetplus-uczen",
+            path = paths.UCZEN.UWAGIIOSIAGNIECIA_GET,
+            symbol = symbol,
+            instance = instance
+        )
+        data = await self.api_request("POST", url, headers = headers, cookies = cookies )
+        return NotesAndAchievementsData( **data )

@@ -26,6 +26,9 @@ class VulcanWeb:
 
         self.email = email
         self.password = password
+        if not self.email or not self.password:
+            raise ValueError("Email and password cannot be empty")
+
         self.symbol = symbol
 
         self.http = HTTP( host, ssl )

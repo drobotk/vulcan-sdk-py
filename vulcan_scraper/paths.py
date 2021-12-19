@@ -15,3 +15,4 @@ class UCZEN:
     UCZENDZIENNIK_GET: str = "/{SYMBOL}/{INSTANCE}/UczenDziennik.mvc/Get"
     OCENY_GET: str = "/{SYMBOL}/{INSTANCE}/Oceny.mvc/Get"
     STATYSTYKI_GETOCENYCZASTKOWE: str = "/{SYMBOL}/{INSTANCE}/Statystyki.mvc/GetOcenyCzastkowe"
+    UWAGIIOSIAGNIECIA_GET: str = "/{SYMBOL}/{INSTANCE}/UwagiIOsiagniecia.mvc/Get"

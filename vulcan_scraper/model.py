@@ -106,3 +106,19 @@ class GradesData:
         self.subjects: list[SubjectGrades] = [ SubjectGrades(**d) for d in data["Oceny"] ]
         self.descriptive: list[DescriptiveAssessment] = [ DescriptiveAssessment(**d) for d in data["OcenyOpisowe"] ]
 
+@reprable("date", "category", "teacher")
+class Note:
+    def __init__( self, **data ):
+        self.date: datetime = datetime.fromisoformat( data["DataWpisu"] )
+        self.teacher: str = data["Nauczyciel"]
+        self.category: str = data["Kategoria"]
+        self.content: str = data["TrescUwagi"]
+        self.category_type: int = get_default( data, "KategoriaTyp", 0 )
+        self.points: str = get_default( data, "Punkty", "")
+        self.show_points: bool = get_default( data, "PokazPunkty", False )
+
+class NotesAndAchievementsData:
+    def __init__( self, **data ):
+        self.notes: list[Note] = [ Note(**d) for d in data["Uwagi"] ]
+        self.notes.sort( key = lambda note: note.date )
+        self.achievements: list[str] = data["Osiagniecia"]

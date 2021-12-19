@@ -1,6 +1,6 @@
 from .utils import reprable
 from .http import HTTP
-from .model import GradesData, StudentRegister
+from .model import GradesData, NotesAndAchievementsData, StudentRegister
 
 @reprable('first_name', 'last_name', 'class_symbol', 'year', 'school_name')
 class Student:
@@ -46,4 +46,9 @@ class Student:
         return await self._http.uczen_get_grades(
             self._symbol, self._instance, self._headers, self._cookies,
             period_id = period_id
+        )
+
+    async def get_notes_and_achievements( self ) -> NotesAndAchievementsData:
+        return await self._http.uczen_get_notes_achievements(
+            self._symbol, self._instance, self._headers, self._cookies,
         )
