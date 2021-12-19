@@ -1,17 +1,22 @@
-class ScraperException( Exception ):
+class ScraperException(Exception):
     pass
 
-class HTTPException( ScraperException ):
+
+class HTTPException(ScraperException):
     pass
 
-class VulcanException( ScraperException ):
+
+class VulcanException(ScraperException):
     pass
 
-class LoginError( ScraperException ):
+
+class LoginError(ScraperException):
     pass
 
-class NoValidSymbolError( LoginError ): 
+
+class NoValidSymbolError(LoginError):
     pass
 
-class InvalidCredentialsError( LoginError ):
+
+class InvalidCredentialsError(LoginError):
     pass
