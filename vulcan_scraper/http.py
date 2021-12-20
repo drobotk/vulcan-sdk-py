@@ -42,6 +42,7 @@ class HTTP:
 
     async def request(self, verb: str, url: str, **kwargs) -> str:
         verb = verb.upper()
+        self._log.debug(f"{verb} {url}")
         async with self.session.request(verb, url, **kwargs) as res:
             if not res.ok:
                 raise HTTPException(f"{verb} {url} got {res.status}")
@@ -78,14 +79,6 @@ class HTTP:
             "POST", url, data={"wa": wa, "wctx": wctx, "wresult": wresult}
         )
 
-    async def uzytkownik_get_reporting_units(self, symbol: str) -> str:
-        url = self.build_url(
-            module="uonetplus-uzytkownik",
-            path=paths.UZYTKOWNIK.NOWAWIADOMOSC_GETJEDNOSTKIUZYTKOWNIKA,
-            symbol=symbol,
-        )
-        return await self.request("GET", url)
-
     async def uczen_start(self, symbol: str, instance: str) -> str:
         url = self.build_url(
             module="uonetplus-uczen",
@@ -94,6 +87,15 @@ class HTTP:
             instance=instance,
         )
         return await self.request("GET", url)
+
+    async def uzytkownik_get_reporting_units(self, symbol: str) -> list[ReportingUnit]:
+        url = self.build_url(
+            module="uonetplus-uzytkownik",
+            path=paths.UZYTKOWNIK.NOWAWIADOMOSC_GETJEDNOSTKIUZYTKOWNIKA,
+            symbol=symbol,
+        )
+        data = await self.api_request("GET", url)
+        return [ReportingUnit(**x) for x in data]
 
     async def uczen_get_registers(
         self, symbol: str, instance: str, headers: dict[str, str]

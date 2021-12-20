@@ -1,6 +1,8 @@
+from typing import Optional
+
 from .utils import reprable
 from .http import HTTP
-from .model import GradesData, NotesAndAchievementsData, StudentRegister
+from .model import GradesData, NotesAndAchievementsData, ReportingUnit, StudentRegister
 
 
 @reprable("first_name", "last_name", "class_symbol", "year", "school_name")
@@ -12,6 +14,7 @@ class Student:
         headers: dict[str, str],
         school_name: str,
         reg: StudentRegister,
+        unit: Optional[ReportingUnit] = None,
     ):
         self._v = vulcan
         self._http: HTTP = vulcan.http
@@ -19,8 +22,11 @@ class Student:
         self._instance = instance
         self._headers = headers
 
-        self.school_name = school_name
         self.register = reg
+        self.school_name = school_name
+
+        self.reporting_unit = unit
+        self.school_abbreviation = unit.abbreviation if unit else ""
 
         self._cookies = {
             "idBiezacyDziennik": str(reg.register_id),

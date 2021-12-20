@@ -1,6 +1,13 @@
 import logging
 import asyncio
 import sys
+from typing import *
+
+from .error import *
+from .http import HTTP
+from .student import Student
+from . import utils
+from .model import ReportingUnit
 
 if (
     sys.version_info[0] == 3
@@ -8,14 +15,6 @@ if (
     and sys.platform.startswith("win")
 ):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-from typing import *
-
-from .error import *
-from .http import HTTP
-from .student import Student
-from . import utils
-from .paths import SYMBOL_DEFAULT
 
 
 class VulcanWeb:
@@ -71,7 +70,7 @@ class VulcanWeb:
             symbols = [self.symbol]
 
         for s in symbols:
-            if s != SYMBOL_DEFAULT and await self._login_cert(s, wa, wctx, wresult):
+            if await self._login_cert(s, wa, wctx, wresult):
                 self.logged_in = True
                 self.symbol = s
                 break
@@ -98,16 +97,22 @@ class VulcanWeb:
         assert self.logged_in and self._uonetplus_text
 
         instances = utils.extract_instances(self._uonetplus_text)
+        units = await self.http.uzytkownik_get_reporting_units(self.symbol)
 
         students = await asyncio.gather(
-            *[self.get_students_for_instance(instance) for instance in instances]
+            *[
+                self._get_students_for_instance(instance, units)
+                for instance in instances
+            ]
         )
-        students = [s for sub in students for s in sub]
 
-        self.students = students
-        return students
+        self.students = [s for sub in students for s in sub]
 
-    async def get_students_for_instance(self, instance: str) -> list[Student]:
+        return self.students
+
+    async def _get_students_for_instance(
+        self, instance: str, units: list[ReportingUnit]
+    ) -> list[Student]:
         students = []
 
         text = await self.http.uczen_start(self.symbol, instance)
@@ -127,7 +132,14 @@ class VulcanWeb:
 
         registers = await self.http.uczen_get_registers(self.symbol, instance, headers)
         for register in registers:
-            students.append(Student(self, instance, headers, school_name, register))
+            unit = (
+                utils.get_first(units, id=register.periods[0].unit_id)
+                if register.periods
+                else None
+            )
+            students.append(
+                Student(self, instance, headers, school_name, register, unit)
+            )
 
         return students
 

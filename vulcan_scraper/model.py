@@ -26,6 +26,16 @@ class ApiResponse:
     feedback: Feedback = None
 
 
+@reprable("id", "abbreviation")
+class ReportingUnit:
+    def __init__(self, **data):
+        self.id: int = data["IdJednostkaSprawozdawcza"]
+        self.abbreviation: str = data["Skrot"]
+        self.sender_id: int = data["Id"]
+        self.sender_name: str = data["NazwaNadawcy"]
+        self.roles: list[int] = data["Role"]
+
+
 @reprable("id", "number", "start", "end")
 class Period:
     def __init__(self, **data):

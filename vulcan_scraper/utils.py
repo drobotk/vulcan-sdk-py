@@ -1,10 +1,15 @@
 import re
-from typing import *
 from dataclasses import dataclass, is_dataclass
 from time import perf_counter
+from typing import *
+from operator import attrgetter
 
-from bs4 import BeautifulSoup, element
+from bs4 import BeautifulSoup
+
 from .error import *
+from .paths import SYMBOL_DEFAULT
+
+re_valid_symbol = re.compile(r"[a-zA-Z0-9]*")
 
 
 def extract_cert(text: str) -> tuple[str, str, str]:
@@ -23,10 +28,14 @@ def extract_cert(text: str) -> tuple[str, str, str]:
 
 def extract_symbols(wresult: str) -> list[str]:
     try:
-        soup = BeautifulSoup(wresult, "lxml-xml")
-        tags = soup.select('[AttributeName="UserInstance"]')[0].children
-        symbols = [c.contents[0] for c in tags if type(c) == element.Tag]
-        symbols = [s for s in symbols if " " not in s]  # filter out invalid symbols
+        soup = BeautifulSoup(wresult.replace(":", ""), "lxml-xml")
+        tags = soup.select(
+            'samlAttribute[AttributeName$="Instance"] samlAttributeValue'
+        )
+        symbols = [tag.text.strip() for tag in tags]
+        symbols = [
+            s for s in symbols if re_valid_symbol.fullmatch(s) and s != SYMBOL_DEFAULT
+        ]
 
     except Exception as e:
         raise ScraperException(f"Extracting symbols failed: {type(e)}: {e}")
@@ -100,3 +109,27 @@ def measure_performance(func):
         return ret
 
     return wrapper
+
+
+T = TypeVar("T")
+
+
+def get_first(iterable: Iterable[T], **attrs: Any) -> Optional[T]:
+    if len(attrs) == 1:
+        k, v = attrs.popitem()
+        pred = attrgetter(k.replace("__", "."))
+        for elem in iterable:
+            if pred(elem) == v:
+                return elem
+
+        return None
+
+    converted = [
+        (attrgetter(attr.replace("__", ".")), value) for attr, value in attrs.items()
+    ]
+
+    for elem in iterable:
+        if all(pred(elem) == value for pred, value in converted):
+            return elem
+
+    return None
