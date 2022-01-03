@@ -2,7 +2,14 @@ from dataclasses import dataclass
 from typing import *
 from datetime import datetime
 
+from .enum import LoginType
 from .utils import nested_dataclass, get_default, reprable
+
+
+@dataclass
+class LoginInfo:
+    type: LoginType
+    prefix: str
 
 
 @dataclass

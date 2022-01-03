@@ -8,6 +8,8 @@ from .model import *
 
 
 class HTTP:
+    SYMBOL_DEFAULT = "Default"
+
     def __init__(self, host: str, ssl: bool = True):
         self.base_host = host
         self.ssl = ssl
@@ -24,16 +26,28 @@ class HTTP:
         if self.session:
             await self.session.close()
 
-    def build_url(self, *, module: str = None, path: str = None, **kwargs) -> str:
-        url = "https://" if self.ssl else "http://"
+    def build_url(
+        self,
+        *,
+        ssl: bool = None,
+        host: str = None,
+        subd: str = None,
+        path: str = None,
+        **kwargs,
+    ) -> str:
+        s = self.ssl if ssl is None else ssl
+        url = "https://" if s else "http://"
 
-        if module:
-            url += f"{module}."
+        if subd:
+            url += f"{subd}."
 
-        url += self.base_host
+        url += host or self.base_host
 
         if path:
             url += path
+
+        if not kwargs.get("symbol"):
+            kwargs["symbol"] = self.SYMBOL_DEFAULT
 
         for k in kwargs:
             url = url.replace(f"{{{k.upper()}}}", str(kwargs[k]))
@@ -42,8 +56,12 @@ class HTTP:
 
     async def request(self, verb: str, url: str, **kwargs) -> str:
         verb = verb.upper()
-        self._log.debug(f"{verb} {url}")
         async with self.session.request(verb, url, **kwargs) as res:
+            for r in res.history:
+                self._log.debug(f"{r.status} {r.method} {r.url}")
+
+            self._log.debug(f"{res.status} {res.method} {res.url}")
+
             if not res.ok:
                 raise HTTPException(f"{verb} {url} got {res.status}")
 
@@ -63,8 +81,14 @@ class HTTP:
 
         return res.data
 
+    async def get_login_page(self, host: str, symbol: str = None) -> str:
+        url = self.build_url(
+            host=host, subd="cufs", path=paths.CUFS.LOGIN_PAGE, symbol=symbol
+        )
+        return await self.request("GET", url)
+
     async def cufs_send_credentials(self, email: str, password: str) -> str:
-        url = self.build_url(module="cufs", path=paths.CUFS.LOGIN)
+        url = self.build_url(subd="cufs", path=paths.CUFS.SEND_CREDENTIALS)
         return await self.request(
             "POST", url, data={"LoginName": email, "Password": password}
         )
@@ -73,7 +97,7 @@ class HTTP:
         self, symbol: str, wa: str, wctx: str, wresult: str
     ) -> str:
         url = self.build_url(
-            module="uonetplus", path=paths.UONETPLUS.LOGIN, symbol=symbol
+            subd="uonetplus", path=paths.UONETPLUS.LOGIN, symbol=symbol
         )
         return await self.request(
             "POST", url, data={"wa": wa, "wctx": wctx, "wresult": wresult}
@@ -81,7 +105,7 @@ class HTTP:
 
     async def uczen_start(self, symbol: str, instance: str) -> str:
         url = self.build_url(
-            module="uonetplus-uczen",
+            subd="uonetplus-uczen",
             path=paths.UCZEN.START,
             symbol=symbol,
             instance=instance,
@@ -90,7 +114,7 @@ class HTTP:
 
     async def uzytkownik_get_reporting_units(self, symbol: str) -> list[ReportingUnit]:
         url = self.build_url(
-            module="uonetplus-uzytkownik",
+            subd="uonetplus-uzytkownik",
             path=paths.UZYTKOWNIK.NOWAWIADOMOSC_GETJEDNOSTKIUZYTKOWNIKA,
             symbol=symbol,
         )
@@ -101,7 +125,7 @@ class HTTP:
         self, symbol: str, instance: str, headers: dict[str, str]
     ) -> list[StudentRegister]:
         url = self.build_url(
-            module="uonetplus-uczen",
+            subd="uonetplus-uczen",
             path=paths.UCZEN.UCZENDZIENNIK_GET,
             symbol=symbol,
             instance=instance,
@@ -118,7 +142,7 @@ class HTTP:
         period_id: int,
     ) -> GradesData:
         url = self.build_url(
-            module="uonetplus-uczen",
+            subd="uonetplus-uczen",
             path=paths.UCZEN.OCENY_GET,
             symbol=symbol,
             instance=instance,
@@ -136,7 +160,7 @@ class HTTP:
         cookies: dict[str, str],
     ) -> NotesAndAchievementsData:
         url = self.build_url(
-            module="uonetplus-uczen",
+            subd="uonetplus-uczen",
             path=paths.UCZEN.UWAGIIOSIAGNIECIA_GET,
             symbol=symbol,
             instance=instance,

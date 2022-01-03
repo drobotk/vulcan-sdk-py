@@ -1,8 +1,6 @@
-SYMBOL_DEFAULT = "Default"
-
-
 class CUFS:
-    LOGIN: str = f"/Default/Account/LogOn?ReturnUrl=%2F{SYMBOL_DEFAULT}%2FFS%2FLS%3Fwa%3Dwsignin1.0%26wtrealm%3Dhttps%253a%252f%252fuonetplus.vulcan.net.pl%252f{SYMBOL_DEFAULT}%252fLoginEndpoint.aspx%26wctx%3Dhttps%253a%252f%252fuonetplus.vulcan.net.pl%252f{SYMBOL_DEFAULT}%252fLoginEndpoint.aspx"
+    LOGIN_PAGE: str = "/{SYMBOL}/Account/LogOn"
+    SEND_CREDENTIALS: str = "/{SYMBOL}/Account/LogOn?ReturnUrl=%2F{SYMBOL}%2FFS%2FLS%3Fwa%3Dwsignin1.0%26wtrealm%3Dhttps%253a%252f%252fuonetplus.vulcan.net.pl%252f{SYMBOL}%252fLoginEndpoint.aspx%26wctx%3Dhttps%253a%252f%252fuonetplus.vulcan.net.pl%252f{SYMBOL}%252fLoginEndpoint.aspx"
 
 
 class UONETPLUS:

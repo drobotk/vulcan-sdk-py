@@ -1,13 +1,13 @@
 import re
 from dataclasses import dataclass, is_dataclass
+from operator import attrgetter
 from time import perf_counter
 from typing import *
-from operator import attrgetter
 
 from bs4 import BeautifulSoup
 
+from .enum import LoginType
 from .error import *
-from .paths import SYMBOL_DEFAULT
 
 re_valid_symbol = re.compile(r"[a-zA-Z0-9]*")
 
@@ -28,14 +28,12 @@ def extract_cert(text: str) -> tuple[str, str, str]:
 
 def extract_symbols(wresult: str) -> list[str]:
     try:
-        soup = BeautifulSoup(wresult.replace(":", ""), "lxml-xml")
+        soup = BeautifulSoup(wresult.replace(":", ""), "lxml")
         tags = soup.select(
             'samlAttribute[AttributeName$="Instance"] samlAttributeValue'
         )
         symbols = [tag.text.strip() for tag in tags]
-        symbols = [
-            s for s in symbols if re_valid_symbol.fullmatch(s) and s != SYMBOL_DEFAULT
-        ]
+        symbols = [s for s in symbols if re_valid_symbol.fullmatch(s)]
 
     except Exception as e:
         raise ScraperException(f"Extracting symbols failed: {type(e)}: {e}")
@@ -61,8 +59,8 @@ def extract_instances(text: str) -> list[str]:
 
 
 def get_script_param(text: str, param: str, default: str = None) -> str:
-    m = re.search(f"{param}: '.*'", text)
-    return m.group()[len(param) + 3 : -1] if m else default
+    m = re.search(f"{param}: '(.+?)'", text)
+    return m.group(1) if m else default
 
 
 def reprable(*attrs):
@@ -133,3 +131,29 @@ def get_first(iterable: Iterable[T], **attrs: Any) -> Optional[T]:
             return elem
 
     return None
+
+
+# wulkanowy sdk <3
+logintype_selector = {
+    LoginType.CUFS: ".loginButton, .LogOnBoard input[type=submit]",
+    LoginType.ADFS: "#loginArea form#loginForm",
+    LoginType.ADFSLight: ".submit-button",
+    LoginType.ADFSLightCards: "#__VIEWSTATE",
+}
+
+
+def get_login_type(text: str) -> LoginType:
+    soup = BeautifulSoup(text, "lxml")
+    for k in logintype_selector:
+        if soup.select(logintype_selector[k]):
+            return k
+
+    return LoginType.UNKNOWN
+
+
+re_login_prefix = re.compile(r"var userNameValue = '(.+?)' \+ userName\.value;")
+
+
+def extract_login_prefix(text: str) -> str:
+    m = re_login_prefix.search(text)
+    return m.group(1) if m else ""

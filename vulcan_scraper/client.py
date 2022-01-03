@@ -7,7 +7,8 @@ from .error import *
 from .http import HTTP
 from .student import Student
 from . import utils
-from .model import ReportingUnit
+from .model import LoginInfo, ReportingUnit
+from .enum import LoginType
 
 if (
     sys.version_info[0] == 3
@@ -47,15 +48,22 @@ class VulcanWeb:
         self.students: list[Student] = []
 
     async def login(self):
-        """Attempts the CUFS > UONETPLUS login process using credentials passed in the constructor"""
+        """Attempts the login process using credentials passed in the constructor"""
 
         self.logged_in = False
 
-        self._log.debug(f'Attempting CUFS login on "{ self.http.base_host }"')
-        text = await self.http.cufs_send_credentials(self.email, self.password)
+        info = await self._get_login_info(self.http.base_host, self.symbol)
+        self._log.debug(info)
 
-        if "Zła nazwa użytkownika lub hasło" in text:
-            raise InvalidCredentialsError
+        if info.type is LoginType.CUFS:
+            self._log.debug(f'Attempting CUFS login on "{ self.http.base_host }"')
+            text = await self.http.cufs_send_credentials(self.email, self.password)
+
+            if "Zła nazwa użytkownika lub hasło" in text:
+                raise InvalidCredentialsError
+
+        else:
+            raise ScraperException(f"{info.type} not implemented!")
 
         if not all(["wa" in text, "wresult" in text, "wctx" in text]):
             raise ScraperException("Certificate not found in CUFS response")
@@ -68,6 +76,11 @@ class VulcanWeb:
 
         else:
             symbols = [self.symbol]
+
+        try:
+            symbols.remove(self.http.SYMBOL_DEFAULT)
+        except ValueError:
+            pass
 
         for s in symbols:
             if await self._login_cert(s, wa, wctx, wresult):
@@ -142,6 +155,13 @@ class VulcanWeb:
             )
 
         return students
+
+    async def _get_login_info(self, host: str, symbol: str) -> LoginInfo:
+        text = await self.http.get_login_page(host, symbol)
+        return LoginInfo(
+            type=utils.get_login_type(text),
+            prefix=utils.extract_login_prefix(text),
+        )
 
     async def close(self):
         """
