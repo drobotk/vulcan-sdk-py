@@ -1,6 +1,7 @@
 from logging import getLogger
 from aiohttp import ClientSession
 from json import loads
+from urllib.parse import quote
 
 from . import paths
 from .error import *
@@ -54,7 +55,7 @@ class HTTP:
 
         return url
 
-    async def request(self, verb: str, url: str, **kwargs) -> str:
+    async def request(self, verb: str, url: str, **kwargs) -> tuple[str, str]:
         verb = verb.upper()
         async with self.session.request(verb, url, **kwargs) as res:
             for r in res.history:
@@ -65,10 +66,10 @@ class HTTP:
             if not res.ok:
                 raise HTTPException(f"{verb} {url} got {res.status}")
 
-            return await res.text()
+            return (await res.text(), res.url)
 
     async def api_request(self, verb: str, url: str, **kwargs) -> Any:
-        text = await self.request(verb, url, **kwargs)
+        text, _ = await self.request(verb, url, **kwargs)
         data = loads(text)
         res = ApiResponse(**data)
         if not res.success:
@@ -81,17 +82,18 @@ class HTTP:
 
         return res.data
 
-    async def get_login_page(self, host: str, symbol: str = None) -> str:
+    async def get_login_page(
+        self, host: str = None, symbol: str = None
+    ) -> tuple[str, str]:
+        realm = self.build_url(host=host, subd="uonetplus", path=paths.UONETPLUS.LOGIN)
         url = self.build_url(
-            host=host, subd="cufs", path=paths.CUFS.LOGIN_PAGE, symbol=symbol
+            host=host,
+            subd="cufs",
+            path=paths.CUFS.LOGIN_PAGE,
+            symbol=symbol,
+            realm=quote(realm, safe=""),
         )
         return await self.request("GET", url)
-
-    async def cufs_send_credentials(self, email: str, password: str) -> str:
-        url = self.build_url(subd="cufs", path=paths.CUFS.SEND_CREDENTIALS)
-        return await self.request(
-            "POST", url, data={"LoginName": email, "Password": password}
-        )
 
     async def uonetplus_send_cert(
         self, symbol: str, wa: str, wctx: str, wresult: str
@@ -99,9 +101,11 @@ class HTTP:
         url = self.build_url(
             subd="uonetplus", path=paths.UONETPLUS.LOGIN, symbol=symbol
         )
-        return await self.request(
-            "POST", url, data={"wa": wa, "wctx": wctx, "wresult": wresult}
-        )
+        return (
+            await self.request(
+                "POST", url, data={"wa": wa, "wctx": wctx, "wresult": wresult}
+            )
+        )[0]
 
     async def uczen_start(self, symbol: str, instance: str) -> str:
         url = self.build_url(
@@ -110,7 +114,7 @@ class HTTP:
             symbol=symbol,
             instance=instance,
         )
-        return await self.request("GET", url)
+        return (await self.request("GET", url))[0]
 
     async def uzytkownik_get_reporting_units(self, symbol: str) -> list[ReportingUnit]:
         url = self.build_url(

@@ -7,7 +7,7 @@ from .error import *
 from .http import HTTP
 from .student import Student
 from . import utils
-from .model import LoginInfo, ReportingUnit
+from .model import ReportingUnit
 from .enum import LoginType
 
 if (
@@ -56,19 +56,49 @@ class VulcanWeb:
         self._log.debug(info)
 
         if info.type is LoginType.CUFS:
-            self._log.debug(f'Attempting CUFS login on "{ self.http.base_host }"')
-            text = await self.http.cufs_send_credentials(self.email, self.password)
+            text, _ = await self.http.request(
+                "POST",
+                info.url,
+                data={"LoginName": self.email, "Password": self.password},
+            )
 
             if "Zła nazwa użytkownika lub hasło" in text:
                 raise InvalidCredentialsError
 
+        elif info.type is LoginType.ADFS or info.type is LoginType.ADFSLight:
+            text, _ = await self.http.request(
+                "POST",
+                info.url,
+                data={
+                    "Username": self.email,
+                    "Password": self.password,
+                    "AuthMethod": "FormsAuthentication",
+                    "x": 0,
+                    "y": 0,
+                },
+            )
+
+            if "hasło są niepoprawne" in text:
+                raise InvalidCredentialsError
+
+            if not all(
+                ["wa" in text, "wresult" in text, "wctx" in text, "action" in text]
+            ):
+                raise ScraperException("Certificate not found in ADFS response")
+
+            wa, wctx, wresult, action = utils.extract_cert(text)
+
+            text, _ = await self.http.request(
+                "POST", action, data={"wa": wa, "wresult": wresult, "wctx": wctx}
+            )
+
         else:
             raise ScraperException(f"{info.type} not implemented!")
 
-        if not all(["wa" in text, "wresult" in text, "wctx" in text]):
+        if not all(["wa" in text, "wresult" in text, "wctx" in text, "action" in text]):
             raise ScraperException("Certificate not found in CUFS response")
 
-        wa, wctx, wresult = utils.extract_cert(text)
+        wa, wctx, wresult, _ = utils.extract_cert(text)
 
         if not self.symbol:
             symbols = utils.extract_symbols(wresult)
@@ -156,12 +186,11 @@ class VulcanWeb:
 
         return students
 
-    async def _get_login_info(self, host: str, symbol: str) -> LoginInfo:
-        text = await self.http.get_login_page(host, symbol)
-        return LoginInfo(
-            type=utils.get_login_type(text),
-            prefix=utils.extract_login_prefix(text),
-        )
+    async def _get_login_info(self, host: str, symbol: str):
+        text, url = await self.http.get_login_page(host, symbol)
+        info = utils.extract_login_info(text)
+        info.url = url
+        return info
 
     async def close(self):
         """

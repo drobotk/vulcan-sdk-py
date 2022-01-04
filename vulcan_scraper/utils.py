@@ -12,18 +12,19 @@ from .error import *
 re_valid_symbol = re.compile(r"[a-zA-Z0-9]*")
 
 
-def extract_cert(text: str) -> tuple[str, str, str]:
+def extract_cert(text: str) -> tuple[str, str, str, str]:
     try:
         soup = BeautifulSoup(text, "lxml")
         wa = soup.select('input[name="wa"]')[0]["value"]
         wctx = soup.select('input[name="wctx"]')[0]["value"]
         wresult = soup.select('input[name="wresult"]')[0]["value"]
+        action = soup.select("form")[0]["action"]
 
     except Exception as e:
         raise ScraperException(f"Extracting cert failed: {type(e)}: {e}")
 
     else:
-        return wa, wctx, wresult
+        return wa, wctx, wresult, action
 
 
 def extract_symbols(wresult: str) -> list[str]:
@@ -133,6 +134,13 @@ def get_first(iterable: Iterable[T], **attrs: Any) -> Optional[T]:
     return None
 
 
+@dataclass
+class LoginInfo:
+    type: LoginType
+    prefix: str
+    url: str = None  # set later
+
+
 # wulkanowy sdk <3
 logintype_selector = {
     LoginType.CUFS: ".loginButton, .LogOnBoard input[type=submit]",
@@ -141,19 +149,19 @@ logintype_selector = {
     LoginType.ADFSLightCards: "#__VIEWSTATE",
 }
 
-
-def get_login_type(text: str) -> LoginType:
-    soup = BeautifulSoup(text, "lxml")
-    for k in logintype_selector:
-        if soup.select(logintype_selector[k]):
-            return k
-
-    return LoginType.UNKNOWN
-
-
 re_login_prefix = re.compile(r"var userNameValue = '(.+?)' \+ userName\.value;")
 
 
-def extract_login_prefix(text: str) -> str:
+def extract_login_info(text: str) -> LoginInfo:
+    soup = BeautifulSoup(text, "lxml")
+
+    type = LoginType.UNKNOWN
+    for k in logintype_selector:
+        if soup.select(logintype_selector[k]):
+            type = k
+            break
+
     m = re_login_prefix.search(text)
-    return m.group(1) if m else ""
+    prefix = m.group(1) if m else ""
+
+    return LoginInfo(type=type, prefix=prefix)
