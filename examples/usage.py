@@ -7,7 +7,9 @@ async def main():
         host="fakelog.cf",  # Vulcan e-register host name, eg. "fakelog.cf", "vulcan.net.pl"
         email="jan@fakelog.cf",
         password="jan123",
-        symbol="powiatwulkanowy",  # Optional: scraper will attempt to extract symbols from CUFS certificate
+        # Optional - scraper will attempt to extract symbols from CUFS certificate
+        # The symbol might be required if your account is ADFS
+        symbol="powiatwulkanowy",
     )
     async with vulcan:
         await vulcan.login()

@@ -91,7 +91,7 @@ class HTTP:
             subd="cufs",
             path=paths.CUFS.LOGIN_PAGE,
             symbol=symbol,
-            realm=quote(realm, safe=""),
+            realm=quote(quote(realm, safe=""), safe="") # double encoding
         )
         return await self.request("GET", url)
 
@@ -106,6 +106,18 @@ class HTTP:
                 "POST", url, data={"wa": wa, "wctx": wctx, "wresult": wresult}
             )
         )[0]
+
+    async def cufs_logout(self, symbol) -> str:
+        url = self.build_url(
+            subd="cufs", path=paths.CUFS.LOGOUT, symbol=symbol
+        )
+        return (await self.request("GET", url))[0]
+
+    async def uonetplus_logout(self, symbol) -> str:
+        url = self.build_url(
+            subd="uonetplus", path=paths.UONETPLUS.LOGOUT, symbol=symbol
+        )
+        return (await self.request("GET", url))[0]
 
     async def uczen_start(self, symbol: str, instance: str) -> str:
         url = self.build_url(

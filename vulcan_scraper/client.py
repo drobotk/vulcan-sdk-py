@@ -78,7 +78,7 @@ class VulcanWeb:
                 },
             )
 
-            if "hasło są niepoprawne" in text:
+            if "hasło są niepoprawne" in text or "nieprawidłowe hasło" in text:
                 raise InvalidCredentialsError
 
             if not all(
@@ -196,6 +196,10 @@ class VulcanWeb:
         """
         Closes the client
         """
+        if self.logged_in:
+            await self.http.uonetplus_logout(self.symbol)
+            await self.http.cufs_logout(self.symbol)
+
         await self.http.close()
 
     async def __aenter__(self):
