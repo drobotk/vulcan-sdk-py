@@ -6,6 +6,7 @@ from urllib.parse import quote
 from . import paths
 from .error import *
 from .model import *
+from . import utils
 
 
 class HTTP:
@@ -66,11 +67,19 @@ class HTTP:
             if not res.ok:
                 raise HTTPException(f"{verb} {url} got {res.status}")
 
-            return (await res.text(), res.url)
+            text = await res.text()
+            if res.content_type.lower().split("/")[-1] != "json":
+                utils.check_for_vulcan_error(text)
+
+            return (text, res.url)
 
     async def api_request(self, verb: str, url: str, **kwargs) -> Any:
         text, _ = await self.request(verb, url, **kwargs)
-        data = loads(text)
+        try:
+            data = loads(text)
+        except:
+            raise ScraperException("Failed to parse JSON data")
+
         res = ApiResponse(**data)
         if not res.success:
             msg = (
@@ -91,7 +100,7 @@ class HTTP:
             subd="cufs",
             path=paths.CUFS.LOGIN_PAGE,
             symbol=symbol,
-            realm=quote(quote(realm, safe=""), safe="") # double encoding
+            realm=quote(quote(realm, safe=""), safe=""),  # double encoding
         )
         return await self.request("GET", url)
 
@@ -108,9 +117,7 @@ class HTTP:
         )[0]
 
     async def cufs_logout(self, symbol) -> str:
-        url = self.build_url(
-            subd="cufs", path=paths.CUFS.LOGOUT, symbol=symbol
-        )
+        url = self.build_url(subd="cufs", path=paths.CUFS.LOGOUT, symbol=symbol)
         return (await self.request("GET", url))[0]
 
     async def uonetplus_logout(self, symbol) -> str:

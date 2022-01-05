@@ -62,9 +62,6 @@ class VulcanWeb:
                 data={"LoginName": self.email, "Password": self.password},
             )
 
-            if "Zła nazwa użytkownika lub hasło" in text:
-                raise InvalidCredentialsError
-
         elif info.type is LoginType.ADFS or info.type is LoginType.ADFSLight:
             text, _ = await self.http.request(
                 "POST",
@@ -77,9 +74,6 @@ class VulcanWeb:
                     "y": 0,
                 },
             )
-
-            if "hasło są niepoprawne" in text or "nieprawidłowe hasło" in text:
-                raise InvalidCredentialsError
 
             if not all(
                 ["wa" in text, "wresult" in text, "wctx" in text, "action" in text]
@@ -119,7 +113,7 @@ class VulcanWeb:
                 break
 
         if not self.logged_in:
-            raise NoValidSymbolError(
+            raise NoValidSymbolException(
                 f"Could not login on any symbol ({ ', '.join(symbols) })"
             )
 

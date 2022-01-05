@@ -10,13 +10,17 @@ class VulcanException(ScraperException):
     pass
 
 
-class LoginError(ScraperException):
+class ServiceUnavailableException(VulcanException):
     pass
 
 
-class NoValidSymbolError(LoginError):
+class LoginException(ScraperException):
     pass
 
 
-class InvalidCredentialsError(LoginError):
+class NoValidSymbolException(LoginException):
+    pass
+
+
+class BadCredentialsException(LoginException):
     pass

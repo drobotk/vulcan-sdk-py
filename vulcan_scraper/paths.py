@@ -2,6 +2,7 @@ class CUFS:
     LOGIN_PAGE: str = "/{SYMBOL}/Account/LogOn?ReturnUrl=%2Fdefault%2FFS%2FLS%3Fwa%3Dwsignin1.0%26wtrealm%3D{REALM}%26wctx%3D{REALM}"
     LOGOUT: str = "/{SYMBOL}/FS/LS?wa=wsignout1.0"
 
+
 class UONETPLUS:
     LOGIN: str = "/{SYMBOL}/LoginEndpoint.aspx"
     LOGOUT: str = "/{SYMBOL}/?logout=true"

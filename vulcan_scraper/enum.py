@@ -6,5 +6,4 @@ class LoginType(Enum):
     CUFS = auto()
     ADFS = auto()
     ADFSLight = auto()
-    ADFSLightScoped = auto()
     ADFSLightCards = auto()

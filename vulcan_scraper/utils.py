@@ -4,7 +4,7 @@ from operator import attrgetter
 from time import perf_counter
 from typing import *
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, element
 
 from .enum import LoginType
 from .error import *
@@ -149,7 +149,7 @@ logintype_selector = {
     LoginType.ADFSLightCards: "#__VIEWSTATE",
 }
 
-re_login_prefix = re.compile(r"var userNameValue = '(.+?)' \+ userName\.value;")
+re_login_prefix = re.compile(r"var userNameValue = '([A-Z]+?)\\\\' \+ userName\.value;")
 
 
 def extract_login_info(text: str) -> LoginInfo:
@@ -165,3 +165,35 @@ def extract_login_info(text: str) -> LoginInfo:
     prefix = m.group(1) if m else ""
 
     return LoginInfo(type=type, prefix=prefix)
+
+
+def tag_own_textcontent(tag: element.Tag) -> str:
+    return re.sub("\s+", " ", "".join(tag.findAll(text=True, recursive=False))).strip()
+
+
+# sdk/ErrorInterceptor.kt <3
+def check_for_vulcan_error(text: str):
+    soup = BeautifulSoup(text, "lxml")
+
+    s = soup.select(".errorBlock .errorTitle, .errorBlock .errorMessage")
+    if s:
+        raise VulcanException(f"{s[0].text}. {s[1].text}")
+
+    # login errors
+    s = soup.select(".ErrorMessage, #ErrorTextLabel, #loginArea #errorText")
+    for tag in s:
+        msg = re.sub("\s+", " ", tag.text).strip()
+        if msg:
+            raise BadCredentialsException(msg)
+
+    s = soup.select("#MainPage_ErrorDiv div")
+    if s:
+        tag = s[0]
+        own = tag_own_textcontent(tag)
+        if (
+            "Trwa aktualizacja bazy danych" in tag.text
+            or "czasowo wyłączona" in tag.text
+        ):
+            raise ServiceUnavailableException(own)
+        else:
+            raise VulcanException(own)
