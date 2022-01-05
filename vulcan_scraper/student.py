@@ -1,14 +1,6 @@
 from typing import Optional
 
-from .utils import reprable
-from .http import HTTP
-from .model import (
-    GradesData,
-    Meeting,
-    NotesAndAchievementsData,
-    ReportingUnit,
-    StudentRegister,
-)
+from .model import *
 
 
 @reprable("first_name", "last_name", "class_symbol", "year", "school_name")
@@ -23,8 +15,8 @@ class Student:
         unit: Optional[ReportingUnit] = None,
     ):
         self._v = vulcan
-        self._http: HTTP = vulcan.http
-        self._symbol: str = vulcan.symbol
+        self._http = vulcan.http
+        self._symbol = vulcan.symbol
         self._instance = instance
         self._headers = headers
 

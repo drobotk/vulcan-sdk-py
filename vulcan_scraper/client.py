@@ -1,14 +1,14 @@
 import logging
 import asyncio
 import sys
-from typing import *
+from typing import Optional
 
 from .error import *
 from .http import HTTP
 from .student import Student
-from . import utils
-from .model import ReportingUnit
+from .model import CertificateResponse, ReportingUnit
 from .enum import LoginType
+from . import utils
 
 if (
     sys.version_info[0] == 3
@@ -94,24 +94,17 @@ class VulcanWeb:
 
             text, _ = await self.http.request("POST", info.url, data=data)
 
-            if not all(
-                ["wa" in text, "wresult" in text, "wctx" in text, "action" in text]
-            ):
-                raise ScraperException("Certificate not found in ADFS response")
-
-            wa, wctx, wresult, action = utils.extract_cert(text)
-
+            cres = CertificateResponse(text)
             text, _ = await self.http.request(
-                "POST", action, data={"wa": wa, "wresult": wresult, "wctx": wctx}
+                "POST",
+                cres.action,
+                data={"wa": cres.wa, "wctx": cres.wctx, "wresult": cres.wresult},
             )
 
-        if not all(["wa" in text, "wresult" in text, "wctx" in text, "action" in text]):
-            raise ScraperException("Certificate not found in CUFS response")
-
-        wa, wctx, wresult, _ = utils.extract_cert(text)
+        cres = CertificateResponse(text)
 
         if not self.symbol:
-            symbols = utils.extract_symbols(wresult)
+            symbols = utils.extract_symbols(cres.wresult)
             self._log.debug(f"Extracted symbols: { symbols }")
 
         else:
@@ -123,7 +116,7 @@ class VulcanWeb:
             pass
 
         for s in symbols:
-            if await self._login_cert(s, wa, wctx, wresult):
+            if await self._login_uonetplus(s, cres.wa, cres.wctx, cres.wresult):
                 self.logged_in = True
                 self.symbol = s
                 break
@@ -133,7 +126,9 @@ class VulcanWeb:
                 f"Could not login on any symbol ({ ', '.join(symbols) })"
             )
 
-    async def _login_cert(self, symbol: str, wa: str, wctx: str, wresult: str) -> bool:
+    async def _login_uonetplus(
+        self, symbol: str, wa: str, wctx: str, wresult: str
+    ) -> bool:
         self._log.debug(f'Attempting UONETPLUS login on "{ symbol }"')
 
         text = await self.http.uonetplus_send_cert(symbol, wa, wctx, wresult)
@@ -147,12 +142,20 @@ class VulcanWeb:
         return True
 
     async def get_students(self) -> list[Student]:
-        assert self.logged_in and self._uonetplus_text
+        """Fetches all students from all schools available on the account"""
+
+        if not self.logged_in:
+            raise NotLoggedInException
+
+        assert self._uonetplus_text
 
         instances = utils.extract_instances(self._uonetplus_text)
         try:  # 05.01.2021 - endpoint failing constantly
             units = await self.http.uzytkownik_get_reporting_units(self.symbol)
         except VulcanException:
+            self._log.warn(
+                "Failed to fetch reporting units. Some student data might be unavailable"
+            )
             units = []
 
         students = await asyncio.gather(
@@ -206,9 +209,8 @@ class VulcanWeb:
         return info
 
     async def close(self):
-        """
-        Closes the client
-        """
+        """Logs out and closes the client"""
+
         if self.logged_in:
             await self.http.uonetplus_logout(self.symbol)
             await self.http.cufs_logout(self.symbol)

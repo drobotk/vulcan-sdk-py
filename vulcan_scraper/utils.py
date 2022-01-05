@@ -1,30 +1,14 @@
 import re
-from dataclasses import dataclass, is_dataclass
+from dataclasses import dataclass
 from operator import attrgetter
 from time import perf_counter
 from typing import *
-
-from bs4 import BeautifulSoup, element
+from bs4 import BeautifulSoup
 
 from .enum import LoginType
 from .error import *
 
 re_valid_symbol = re.compile(r"[a-zA-Z0-9]*")
-
-
-def extract_cert(text: str) -> tuple[str, str, str, str]:
-    try:
-        soup = BeautifulSoup(text, "lxml")
-        wa = soup.select('input[name="wa"]')[0]["value"]
-        wctx = soup.select('input[name="wctx"]')[0]["value"]
-        wresult = soup.select('input[name="wresult"]')[0]["value"]
-        action = soup.select("form")[0]["action"]
-
-    except Exception as e:
-        raise ScraperException(f"Extracting cert failed: {type(e)}: {e}")
-
-    else:
-        return wa, wctx, wresult, action
 
 
 def extract_symbols(wresult: str) -> list[str]:
@@ -62,41 +46,6 @@ def extract_instances(text: str) -> list[str]:
 def get_script_param(text: str, param: str, default: str = None) -> str:
     m = re.search(f"{param}: '(.+?)'", text)
     return m.group(1) if m else default
-
-
-def reprable(*attrs):
-    def wrapper(cls):
-        def __repr__(self) -> str:
-            return f'<{self.__class__.__name__} { " ".join([ f"{attr}={repr(getattr(self, attr))}" for attr in attrs ]) }>'
-
-        cls.__repr__ = __repr__
-
-        return cls
-
-    return wrapper
-
-
-def nested_dataclass(*args, **kwargs):
-    def wrapper(cls):
-        cls = dataclass(cls, **kwargs)
-        original_init = cls.__init__
-
-        def __init__(self, *args, **kwargs):
-            for name, value in kwargs.items():
-                field_type = cls.__annotations__.get(name, None)
-                if is_dataclass(field_type) and isinstance(value, dict):
-                    new_obj = field_type(**value)
-                    kwargs[name] = new_obj
-            original_init(self, *args, **kwargs)
-
-        cls.__init__ = __init__
-        return cls
-
-    return wrapper(args[0]) if args else wrapper
-
-
-def get_default(data: dict, key: str, default: Any):
-    return data.get(key, default) or default
 
 
 def measure_performance(func):
@@ -177,35 +126,3 @@ def extract_login_info(text: str) -> LoginInfo:
         info.db = soup.select('input[name="__db"]')[0]["value"]
 
     return info
-
-
-def tag_own_textcontent(tag: element.Tag) -> str:
-    return re.sub("\s+", " ", "".join(tag.findAll(text=True, recursive=False))).strip()
-
-
-# sdk/ErrorInterceptor.kt <3
-def check_for_vulcan_error(text: str):
-    soup = BeautifulSoup(text, "lxml")
-
-    s = soup.select(".errorBlock .errorTitle, .errorBlock .errorMessage")
-    if s:
-        raise VulcanException(f"{s[0].text}. {s[1].text}")
-
-    # login errors
-    s = soup.select(".ErrorMessage, #ErrorTextLabel, #loginArea #errorText")
-    for tag in s:
-        msg = re.sub("\s+", " ", tag.text).strip()
-        if msg:
-            raise BadCredentialsException(msg)
-
-    s = soup.select("#MainPage_ErrorDiv div")
-    if s:
-        tag = s[0]
-        own = tag_own_textcontent(tag)
-        if (
-            "Trwa aktualizacja bazy danych" in tag.text
-            or "czasowo wyłączona" in tag.text
-        ):
-            raise ServiceUnavailableException(own)
-        else:
-            raise VulcanException(own)

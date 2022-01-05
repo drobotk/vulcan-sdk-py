@@ -6,7 +6,6 @@ from urllib.parse import quote
 from . import paths
 from .error import *
 from .model import *
-from . import utils
 
 
 class HTTP:
@@ -69,7 +68,7 @@ class HTTP:
 
             text = await res.text()
             if res.content_type.lower().split("/")[-1] != "json":
-                utils.check_for_vulcan_error(text)
+                check_for_vulcan_error(text)
 
             return (text, res.url)
 

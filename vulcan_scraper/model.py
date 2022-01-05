@@ -1,8 +1,57 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass
 from typing import *
 from datetime import datetime
+from bs4 import BeautifulSoup
 
-from .utils import nested_dataclass, reprable, get_default
+from .error import *
+
+
+def reprable(*attrs):
+    def wrapper(cls):
+        def __repr__(self) -> str:
+            return f'<{self.__class__.__name__} { " ".join([ f"{attr}={repr(getattr(self, attr))}" for attr in attrs ]) }>'
+
+        cls.__repr__ = __repr__
+
+        return cls
+
+    return wrapper
+
+
+def nested_dataclass(*args, **kwargs):
+    def wrapper(cls):
+        cls = dataclass(cls, **kwargs)
+        original_init = cls.__init__
+
+        def __init__(self, *args, **kwargs):
+            for name, value in kwargs.items():
+                field_type = cls.__annotations__.get(name, None)
+                if is_dataclass(field_type) and isinstance(value, dict):
+                    new_obj = field_type(**value)
+                    kwargs[name] = new_obj
+            original_init(self, *args, **kwargs)
+
+        cls.__init__ = __init__
+        return cls
+
+    return wrapper(args[0]) if args else wrapper
+
+
+def get_default(data: dict, key: str, default: Any):
+    return data.get(key, default) or default
+
+
+class CertificateResponse:
+    def __init__(self, text: str):
+        soup = BeautifulSoup(text, "lxml")
+        try:
+            self.wa = soup.select('input[name="wa"]')[0]["value"]
+            self.wctx = soup.select('input[name="wctx"]')[0]["value"]
+            self.wresult = soup.select('input[name="wresult"]')[0]["value"]
+            self.action = soup.select("form")[0]["action"]
+
+        except Exception as e:
+            raise ScraperException(f"Certificate Response parse error: {type(e)}: {e}")
 
 
 @dataclass
