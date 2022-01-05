@@ -55,11 +55,15 @@ class VulcanWeb:
         info = await self._get_login_info(self.http.base_host, self.symbol)
         self._log.debug(info)
 
+        login = self.email
+        if info.prefix and "@" not in login:
+            login = f'{info.prefix}\\{login}'
+
         if info.type is LoginType.CUFS:
             text, _ = await self.http.request(
                 "POST",
                 info.url,
-                data={"LoginName": self.email, "Password": self.password},
+                data={"LoginName": login, "Password": self.password},
             )
 
         elif info.type is LoginType.ADFS or info.type is LoginType.ADFSLight:
@@ -67,7 +71,7 @@ class VulcanWeb:
                 "POST",
                 info.url,
                 data={
-                    "Username": self.email,
+                    "Username": login,
                     "Password": self.password,
                     "AuthMethod": "FormsAuthentication",
                     "x": 0,
@@ -134,7 +138,10 @@ class VulcanWeb:
         assert self.logged_in and self._uonetplus_text
 
         instances = utils.extract_instances(self._uonetplus_text)
-        units = await self.http.uzytkownik_get_reporting_units(self.symbol)
+        try: # 05.01.2021 - endpoint failing constantly
+            units = await self.http.uzytkownik_get_reporting_units(self.symbol)
+        except VulcanException:
+            units = []
 
         students = await asyncio.gather(
             *[
