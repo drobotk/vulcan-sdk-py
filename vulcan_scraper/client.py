@@ -78,9 +78,7 @@ class VulcanWeb:
                     "Password": self.password,
                     "AuthMethod": "FormsAuthentication",
                 }
-            elif info.type is LoginType.ADFSLight:
-                data = {"Username": login, "Password": self.password}
-            elif info.type is LoginType.ADFSLightCards:
+            elif info.type is LoginType.ADFSCards:
                 data = {
                     "UsernameTextBox": login,
                     "PasswordTextBox": self.password,
@@ -91,6 +89,8 @@ class VulcanWeb:
                     "SubmitButton.x": "0",
                     "SubmitButton.y": "0",
                 }
+            elif info.type is LoginType.ADFSLight:
+                data = {"Username": login, "Password": self.password}
 
             text, _ = await self.http.request("POST", info.url, data=data)
 

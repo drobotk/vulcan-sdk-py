@@ -88,7 +88,7 @@ class LoginInfo:
     type: LoginType
     prefix: str
     url: str = None  # set later
-    # adfslightcards
+    # adfs cards
     vs: str = None
     vsg: str = None
     ev: str = None
@@ -100,7 +100,7 @@ logintype_selector = {
     LoginType.CUFS: ".loginButton, .LogOnBoard input[type=submit]",
     LoginType.ADFS: "#loginArea form#loginForm",
     LoginType.ADFSLight: ".submit-button",
-    LoginType.ADFSLightCards: 'input[name="__VIEWSTATE"]',
+    LoginType.ADFSCards: 'input[name="__VIEWSTATE"]',
 }
 
 re_login_prefix = re.compile(r"var userNameValue = '([A-Z]+?)\\\\' \+ userName\.value;")
@@ -119,7 +119,7 @@ def extract_login_info(text: str) -> LoginInfo:
     prefix = m.group(1) if m else ""
 
     info = LoginInfo(type=type, prefix=prefix)
-    if type is LoginType.ADFSLightCards:
+    if type is LoginType.ADFSCards:
         info.vs = soup.select('input[name="__VIEWSTATE"]')[0]["value"]
         info.vsg = soup.select('input[name="__VIEWSTATEGENERATOR"]')[0]["value"]
         info.ev = soup.select('input[name="__EVENTVALIDATION"]')[0]["value"]
