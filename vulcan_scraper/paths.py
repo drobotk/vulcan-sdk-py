@@ -23,3 +23,4 @@ class UCZEN:
         "/{SYMBOL}/{INSTANCE}/Statystyki.mvc/GetOcenyCzastkowe"
     )
     UWAGIIOSIAGNIECIA_GET: str = "/{SYMBOL}/{INSTANCE}/UwagiIOsiagniecia.mvc/Get"
+    ZEBRANIA_GET: str = "/{SYMBOL}/{INSTANCE}/Zebrania.mvc/Get"

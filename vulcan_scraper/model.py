@@ -78,7 +78,7 @@ class Grade:
         self.symbol: str = data["KodKolumny"]
         self.description: str = data["NazwaKolumny"]
         self.weight: float = data["Waga"]
-        self.date: str = data["DataOceny"]
+        self.date: datetime = datetime.strptime(data["DataOceny"], "%d.%m.%Y")
 
     def __str__(self) -> str:
         return self.entry
@@ -99,6 +99,7 @@ class SubjectGrades:
         self.annual_points: str = get_default(data, "OcenaRocznaPunkty", "")
         self.points_sum: str = get_default(data, "SumaPunktow", "")
         self.grades: list[Grade] = [Grade(**d) for d in data["OcenyCzastkowe"]]
+        self.grades.sort(key=lambda grade: grade.date)
 
     def __str__(self) -> str:
         return self.subject_name
@@ -146,3 +147,24 @@ class NotesAndAchievementsData:
         self.notes: list[Note] = [Note(**d) for d in data["Uwagi"]]
         self.notes.sort(key=lambda note: note.date)
         self.achievements: list[str] = data["Osiagniecia"]
+
+
+@reprable("title", "topic", "date")
+class Meeting:
+    def __init__(self, **data):
+        self.id: int = data["Id"]
+        self.topic: str = data["TematZebrania"]
+        self.agenda: str = data["Agenda"]
+        self.people_present: str = data["ObecniNaZebraniu"]
+        self.online: str = get_default(data, "ZebranieOnline", "")
+
+        split = data["Tytul"].split(", ")
+        self.title: str = ", ".join(split[2:])
+
+        date = get_default(data, "DataSpotkania", "")
+        if date:
+            self.date = datetime.fromisoformat(date)
+        else:
+            self.date = datetime.strptime(
+                split[1].replace(" godzina", ""), "%d.%m.%Y %H:%M"
+            )

@@ -50,6 +50,11 @@ async def main():
         for achievement in data.achievements:
             print(f"# {achievement}")
 
+        print("\t--- Meetings ---")
+        meetings = await student.get_meetings()
+        for m in meetings:
+            print(f"# {m.date} | {m.title} | {m.topic}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

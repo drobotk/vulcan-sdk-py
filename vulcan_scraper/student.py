@@ -2,7 +2,13 @@ from typing import Optional
 
 from .utils import reprable
 from .http import HTTP
-from .model import GradesData, NotesAndAchievementsData, ReportingUnit, StudentRegister
+from .model import (
+    GradesData,
+    Meeting,
+    NotesAndAchievementsData,
+    ReportingUnit,
+    StudentRegister,
+)
 
 
 @reprable("first_name", "last_name", "class_symbol", "year", "school_name")
@@ -60,6 +66,14 @@ class Student:
 
     async def get_notes_and_achievements(self) -> NotesAndAchievementsData:
         return await self._http.uczen_get_notes_achievements(
+            self._symbol,
+            self._instance,
+            self._headers,
+            self._cookies,
+        )
+
+    async def get_meetings(self) -> list[Meeting]:
+        return await self._http.uczen_get_meetings(
             self._symbol,
             self._instance,
             self._headers,

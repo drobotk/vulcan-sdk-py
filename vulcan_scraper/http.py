@@ -190,3 +190,19 @@ class HTTP:
         )
         data = await self.api_request("POST", url, headers=headers, cookies=cookies)
         return NotesAndAchievementsData(**data)
+
+    async def uczen_get_meetings(
+        self,
+        symbol: str,
+        instance: str,
+        headers: dict[str, str],
+        cookies: dict[str, str],
+    ) -> list[Meeting]:
+        url = self.build_url(
+            subd="uonetplus-uczen",
+            path=paths.UCZEN.ZEBRANIA_GET,
+            symbol=symbol,
+            instance=instance,
+        )
+        data = await self.api_request("POST", url, headers=headers, cookies=cookies)
+        return [Meeting(**x) for x in data]
