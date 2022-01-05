@@ -53,11 +53,16 @@ class VulcanWeb:
         self.logged_in = False
 
         info = await self._get_login_info(self.http.base_host, self.symbol)
+        if info.type is LoginType.UNKNOWN:
+            raise ScraperException(
+                f'Unknown login type on "{self.http.base_host}/{self.symbol}"'
+            )
+
         self._log.debug(info)
 
         login = self.email
         if info.prefix and "@" not in login:
-            login = f'{info.prefix}\\{login}'
+            login = f"{info.prefix}\\{login}"
 
         if info.type is LoginType.CUFS:
             text, _ = await self.http.request(
@@ -66,18 +71,28 @@ class VulcanWeb:
                 data={"LoginName": login, "Password": self.password},
             )
 
-        elif info.type is LoginType.ADFS or info.type is LoginType.ADFSLight:
-            text, _ = await self.http.request(
-                "POST",
-                info.url,
-                data={
-                    "Username": login,
+        else:
+            if info.type is LoginType.ADFS:
+                data = {
+                    "UserName": login,
                     "Password": self.password,
                     "AuthMethod": "FormsAuthentication",
-                    "x": 0,
-                    "y": 0,
-                },
-            )
+                }
+            elif info.type is LoginType.ADFSLight:
+                data = {"Username": login, "Password": self.password}
+            elif info.type is LoginType.ADFSLightCards:
+                data = {
+                    "UsernameTextBox": login,
+                    "PasswordTextBox": self.password,
+                    "__VIEWSTATE": info.vs,
+                    "__VIEWSTATEGENERATOR": info.vsg,
+                    "__EVENTVALIDATION": info.ev,
+                    "__db": info.db,
+                    "SubmitButton.x": "0",
+                    "SubmitButton.y": "0",
+                }
+
+            text, _ = await self.http.request("POST", info.url, data=data)
 
             if not all(
                 ["wa" in text, "wresult" in text, "wctx" in text, "action" in text]
@@ -89,9 +104,6 @@ class VulcanWeb:
             text, _ = await self.http.request(
                 "POST", action, data={"wa": wa, "wresult": wresult, "wctx": wctx}
             )
-
-        else:
-            raise ScraperException(f"{info.type} not implemented!")
 
         if not all(["wa" in text, "wresult" in text, "wctx" in text, "action" in text]):
             raise ScraperException("Certificate not found in CUFS response")
@@ -138,7 +150,7 @@ class VulcanWeb:
         assert self.logged_in and self._uonetplus_text
 
         instances = utils.extract_instances(self._uonetplus_text)
-        try: # 05.01.2021 - endpoint failing constantly
+        try:  # 05.01.2021 - endpoint failing constantly
             units = await self.http.uzytkownik_get_reporting_units(self.symbol)
         except VulcanException:
             units = []

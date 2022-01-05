@@ -139,6 +139,11 @@ class LoginInfo:
     type: LoginType
     prefix: str
     url: str = None  # set later
+    # adfslightcards
+    vs: str = None
+    vsg: str = None
+    ev: str = None
+    db: str = None
 
 
 # wulkanowy sdk <3
@@ -146,7 +151,7 @@ logintype_selector = {
     LoginType.CUFS: ".loginButton, .LogOnBoard input[type=submit]",
     LoginType.ADFS: "#loginArea form#loginForm",
     LoginType.ADFSLight: ".submit-button",
-    LoginType.ADFSLightCards: "#__VIEWSTATE",
+    LoginType.ADFSLightCards: 'input[name="__VIEWSTATE"]',
 }
 
 re_login_prefix = re.compile(r"var userNameValue = '([A-Z]+?)\\\\' \+ userName\.value;")
@@ -164,7 +169,14 @@ def extract_login_info(text: str) -> LoginInfo:
     m = re_login_prefix.search(text)
     prefix = m.group(1) if m else ""
 
-    return LoginInfo(type=type, prefix=prefix)
+    info = LoginInfo(type=type, prefix=prefix)
+    if type is LoginType.ADFSLightCards:
+        info.vs = soup.select('input[name="__VIEWSTATE"]')[0]["value"]
+        info.vsg = soup.select('input[name="__VIEWSTATEGENERATOR"]')[0]["value"]
+        info.ev = soup.select('input[name="__EVENTVALIDATION"]')[0]["value"]
+        info.db = soup.select('input[name="__db"]')[0]["value"]
+
+    return info
 
 
 def tag_own_textcontent(tag: element.Tag) -> str:

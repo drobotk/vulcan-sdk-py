@@ -26,16 +26,16 @@ async def main():
         # fetching grades of a student for a given period index
         data = await student.get_grades(period=0)
 
-        print("--- Grades ---")
+        print("\t--- Grades ---")
         for subject in data.subjects:
             grades = "  ".join([g.entry for g in subject.grades])
             if grades:
-                print(f"\t{subject.subject_name}: {grades}")
+                print(f"{subject.subject_name}: {grades}")
 
         # fetching notes and achievements of a student
         data = await student.get_notes_and_achievements()
 
-        print("--- Notes ---")
+        print("\t--- Notes ---")
         for note in data.notes:
             entry = (
                 "+"
@@ -44,11 +44,11 @@ async def main():
                 if note.category_type == 3
                 else "#"
             )
-            print(f"\t{entry} {note.category}: {note.content}")
+            print(f"{entry} {note.category}: {note.content}")
 
-        print("--- Achievements ---")
+        print("\t--- Achievements ---")
         for achievement in data.achievements:
-            print(f"\t# {achievement}")
+            print(f"# {achievement}")
 
 
 if __name__ == "__main__":
