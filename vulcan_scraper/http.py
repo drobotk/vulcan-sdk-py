@@ -90,14 +90,13 @@ class HTTP:
 
         return res.data
 
-    async def get_login_page(
-        self, host: str = None, symbol: str = None
-    ) -> tuple[str, str]:
-        realm = self.build_url(host=host, subd="uonetplus", path=paths.UONETPLUS.LOGIN)
+    async def get_login_page(self, symbol: str = None) -> tuple[str, str]:
+        realm = self.build_url(
+            subd="uonetplus", path=paths.UONETPLUS.LOGIN, symbol=symbol
+        )
         url = self.build_url(
-            host=host,
             subd="cufs",
-            path=paths.CUFS.LOGIN_PAGE,
+            path=paths.CUFS.LOGIN,
             symbol=symbol,
             realm=quote(quote(realm, safe=""), safe=""),  # double encoding
         )

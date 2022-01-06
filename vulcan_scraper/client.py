@@ -52,7 +52,7 @@ class VulcanWeb:
 
         self.logged_in = False
 
-        info = await self._get_login_info(self.http.base_host, self.symbol)
+        info = await self._get_login_info()
         if info.type is LoginType.UNKNOWN:
             raise ScraperException(
                 f'Unknown login type on "{self.http.base_host}/{self.symbol}"'
@@ -129,12 +129,12 @@ class VulcanWeb:
     async def _login_uonetplus(
         self, symbol: str, wa: str, wctx: str, wresult: str
     ) -> bool:
-        self._log.debug(f'Attempting UONETPLUS login on "{ symbol }"')
-
         text = await self.http.uonetplus_send_cert(symbol, wa, wctx, wresult)
 
-        if "nie został zarejestrowany" in text or "VParam" not in text:
+        if "nie został zarejestrowany" in text:
             return False
+
+        assert "VParam" in text
 
         self._uonetplus_text = text
         self._uonetplus_permissions = utils.get_script_param(text, "permissions")
@@ -202,8 +202,8 @@ class VulcanWeb:
 
         return students
 
-    async def _get_login_info(self, host: str, symbol: str):
-        text, url = await self.http.get_login_page(host, symbol)
+    async def _get_login_info(self):
+        text, url = await self.http.get_login_page(self.symbol)
         info = utils.extract_login_info(text)
         info.url = url
         return info
