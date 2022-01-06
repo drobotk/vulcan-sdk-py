@@ -65,9 +65,10 @@ class Student:
         )
 
     async def get_meetings(self) -> list[Meeting]:
-        return await self._http.uczen_get_meetings(
+        meetings = await self._http.uczen_get_meetings(
             self._symbol,
             self._instance,
             self._headers,
             self._cookies,
         )
+        return sorted(meetings, key=lambda m: m.date)
