@@ -36,6 +36,8 @@ class VulcanWeb:
             raise ValueError("Email and password cannot be empty")
 
         self.symbol = symbol
+        if self.symbol and not utils.re_valid_symbol.fullmatch(self.symbol):
+            raise ValueError("Symbol can only contain letters and numbers")
 
         self.http = HTTP(host, ssl)
 
@@ -208,12 +210,20 @@ class VulcanWeb:
         info.url = url
         return info
 
+    async def logout(self):
+        if not self.logged_in:
+            raise NotLoggedInException
+
+        await self.http.uonetplus_logout(self.symbol)
+        await self.http.cufs_logout(self.symbol)
+        self.http.session.cookie_jar.clear()
+        self.logged_in = False
+
     async def close(self):
         """Logs out and closes the client"""
 
         if self.logged_in:
-            await self.http.uonetplus_logout(self.symbol)
-            await self.http.cufs_logout(self.symbol)
+            await self.logout()
 
         await self.http.close()
 

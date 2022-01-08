@@ -51,7 +51,7 @@ class CertificateResponse:
             self.action = soup.select("form")[0]["action"]
 
         except Exception as e:
-            raise ScraperException(f"Certificate Response parse error: {type(e)}: {e}")
+            raise ScraperException(f"Certificate Response parse error: {e.__class__.__name__}: {e}")
 
 
 @dataclass
