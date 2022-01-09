@@ -219,3 +219,22 @@ class Meeting:
             self.date = datetime.strptime(
                 split[1].replace(" godzina", ""), "%d.%m.%Y %H:%M"
             )
+
+
+class TimetableHeader:
+    def __init__(self, **data):
+        self.text: str = data["Text"]
+        self.width: str = get_default(data, "Width", "")
+        self.distinction: bool = data["Distinction"]
+        self.flex: int = data["Flex"]
+
+
+class TimetableResponse:
+    def __init__(self, **data):
+        # self.date: datetime = datetime.fromisoformat(data["Data"])
+        self.date: str = data["Data"]
+        self.headers: list[TimetableHeader] = [
+            TimetableHeader(**d) for d in data["Headers"]
+        ]
+        self.rows: list[list[str]] = data["Rows"]
+        self.additionals: list[Any] = data["Additionals"]
