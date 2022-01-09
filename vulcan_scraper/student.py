@@ -3,7 +3,7 @@ from typing import Optional
 
 from .model import *
 from .http import HTTP
-
+from .timetable import Timetable
 
 @reprable("first_name", "last_name", "class_symbol", "year", "school_name")
 class Student:
@@ -75,7 +75,9 @@ class Student:
         )
         return sorted(meetings, key=lambda m: m.date)
 
-    async def get_timetable(self, start_date: datetime) -> TimetableResponse:
-        return await self._http.uczen_get_timetable(
+    async def get_timetable(self, start_date: datetime) -> Timetable:
+        data = await self._http.uczen_get_timetable(
             self._symbol, self._instance, self._headers, self._cookies, start_date
         )
+
+        return Timetable(data)

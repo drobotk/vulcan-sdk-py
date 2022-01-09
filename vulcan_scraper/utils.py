@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from operator import attrgetter
 from time import perf_counter
 from typing import *
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, element
 
 from .enum import LoginType
 from .error import *
@@ -130,3 +130,48 @@ def extract_login_info(text: str) -> LoginInfo:
         info.db = soup.select('input[name="__db"]')[0]["value"]
 
     return info
+
+def tag_own_textcontent(tag: element.Tag) -> str:
+    return re.sub("\s+", " ", "".join(tag.findAll(text=True, recursive=False))).strip()
+
+def sub_before(a: str, b: str, c: str = None) -> str:
+    idx = a.find(b)
+    if idx < 0:
+        return c or a
+
+    return a[:idx]
+
+def sub_after(a: str, b: str, c: str = None) -> str:
+    idx = a.find(b)
+    if idx < 0:
+        return c or a
+
+    return a[idx+len(b):]
+
+
+# sdk/ErrorInterceptor.kt <3
+def check_for_vulcan_error(text: str):
+    soup = BeautifulSoup(text, "lxml")
+
+    s = soup.select(".errorBlock .errorTitle, .errorBlock .errorMessage")
+    if s:
+        raise VulcanException(f"{s[0].text}. {s[1].text}")
+
+    # login errors
+    s = soup.select(".ErrorMessage, #ErrorTextLabel, #loginArea #errorText")
+    for tag in s:
+        msg = re.sub("\s+", " ", tag.text).strip()
+        if msg:
+            raise BadCredentialsException(msg)
+
+    s = soup.select("#MainPage_ErrorDiv div")
+    if s:
+        tag = s[0]
+        own = tag_own_textcontent(tag)
+        if (
+            "Trwa aktualizacja bazy danych" in tag.text
+            or "czasowo wyłączona" in tag.text
+        ):
+            raise ServiceUnavailableException(own)
+        else:
+            raise VulcanException(own)

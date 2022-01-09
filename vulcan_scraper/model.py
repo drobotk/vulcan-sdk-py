@@ -224,14 +224,15 @@ class Meeting:
 class TimetableHeader:
     def __init__(self, **data):
         self.text: str = data["Text"]
-        self.width: str = data["Width"]
+        self.width: str = get_default(data, "Width", "")
         self.distinction: bool = data["Distinction"]
         self.flex: int = data["Flex"]
 
 
 class TimetableResponse:
     def __init__(self, **data):
-        self.date: datetime = datetime.fromisoformat(data["Data"])
+        # self.date: datetime = datetime.fromisoformat(data["Data"])
+        self.date: str = data["Data"]
         self.headers: list[TimetableHeader] = [
             TimetableHeader(**d) for d in data["Headers"]
         ]
