@@ -21,7 +21,9 @@ def extract_symbols(wresult: str) -> list[str]:
         symbols = [s for s in symbols if re_valid_symbol.fullmatch(s)]
 
     except Exception as e:
-        raise ScraperException(f"Extracting symbols failed: {e.__class__.__name__}: {e}")
+        raise ScraperException(
+            f"Extracting symbols failed: {e.__class__.__name__}: {e}"
+        )
 
     else:
         return symbols
@@ -37,7 +39,9 @@ def extract_instances(text: str) -> list[str]:
         instances = [l.split("/")[4] for l in links]
 
     except Exception as e:
-        raise ScraperException(f"Extracting instances failed: {e.__class__.__name__}: {e}")
+        raise ScraperException(
+            f"Extracting instances failed: {e.__class__.__name__}: {e}"
+        )
 
     else:
         return instances
