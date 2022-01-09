@@ -1,6 +1,8 @@
+from datetime import datetime
 from typing import Optional
 
 from .model import *
+from .http import HTTP
 
 
 @reprable("first_name", "last_name", "class_symbol", "year", "school_name")
@@ -15,7 +17,7 @@ class Student:
         unit: Optional[ReportingUnit] = None,
     ):
         self._v = vulcan
-        self._http = vulcan.http
+        self._http: HTTP = vulcan.http
         self._symbol = vulcan.symbol
         self._instance = instance
         self._headers = headers
@@ -72,3 +74,8 @@ class Student:
             self._cookies,
         )
         return sorted(meetings, key=lambda m: m.date)
+
+    async def get_timetable(self, start_date: datetime) -> TimetableResponse:
+        return await self._http.uczen_get_timetable(
+            self._symbol, self._instance, self._headers, self._cookies, start_date
+        )

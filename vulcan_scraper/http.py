@@ -2,6 +2,7 @@ from logging import getLogger
 from aiohttp import ClientSession
 from json import loads
 from urllib.parse import quote
+from datetime import datetime
 
 from . import paths
 from .error import *
@@ -204,3 +205,26 @@ class HTTP:
         )
         data = await self.api_request("POST", url, headers=headers, cookies=cookies)
         return [Meeting(**x) for x in data]
+
+    async def uczen_get_timetable(
+        self,
+        symbol: str,
+        instance: str,
+        headers: dict[str, str],
+        cookies: dict[str, str],
+        start_date: datetime,
+    ) -> TimetableResponse:
+        url = self.build_url(
+            subd="uonetplus-uczen",
+            path=paths.UCZEN.PLANZAJEC_GET,
+            symbol=symbol,
+            instance=instance,
+        )
+        data = await self.api_request(
+            "POST",
+            url,
+            headers=headers,
+            cookies=cookies,
+            data={"data": start_date.isoformat()},
+        )
+        return TimetableResponse(**data)
