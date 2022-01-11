@@ -213,7 +213,7 @@ class HTTP:
         instance: str,
         headers: dict[str, str],
         cookies: dict[str, str],
-        start_date: datetime,
+        date: datetime,
     ) -> TimetableResponse:
         url = self.build_url(
             subd="uonetplus-uczen",
@@ -226,6 +226,6 @@ class HTTP:
             url,
             headers=headers,
             cookies=cookies,
-            data={"data": start_date.isoformat()},
+            data={"data": date.strftime("%Y-%m-%dT00:00:00")},
         )
         return TimetableResponse(**data)

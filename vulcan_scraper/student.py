@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from .model import *
@@ -76,9 +76,15 @@ class Student:
         )
         return sorted(meetings, key=lambda m: m.date)
 
-    async def get_timetable(self, start_date: datetime) -> Timetable:
+    async def get_timetable(self, week_day: datetime) -> Timetable:
+        """
+        Get the student's timetable for the week `week_day` is in.
+
+        You can use `datetime.now()` to get current week's timetable
+        """
+        monday = week_day - timedelta(days=week_day.weekday())
         data = await self._http.uczen_get_timetable(
-            self._symbol, self._instance, self._headers, self._cookies, start_date
+            self._symbol, self._instance, self._headers, self._cookies, monday
         )
 
         return Timetable(data)
