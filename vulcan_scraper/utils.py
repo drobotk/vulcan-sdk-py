@@ -131,8 +131,10 @@ def extract_login_info(text: str) -> LoginInfo:
 
     return info
 
+
 def tag_own_textcontent(tag: element.Tag) -> str:
     return re.sub("\s+", " ", "".join(tag.findAll(text=True, recursive=False))).strip()
+
 
 def sub_before(a: str, b: str, c: str = None) -> str:
     idx = a.find(b)
@@ -141,12 +143,13 @@ def sub_before(a: str, b: str, c: str = None) -> str:
 
     return a[:idx]
 
+
 def sub_after(a: str, b: str, c: str = None) -> str:
     idx = a.find(b)
     if idx < 0:
         return c or a
 
-    return a[idx+len(b):]
+    return a[idx + len(b) :]
 
 
 # sdk/ErrorInterceptor.kt <3

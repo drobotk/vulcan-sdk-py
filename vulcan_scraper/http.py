@@ -9,6 +9,7 @@ from .error import *
 from .model import *
 from .utils import check_for_vulcan_error
 
+
 class HTTP:
     SYMBOL_DEFAULT = "Default"
 

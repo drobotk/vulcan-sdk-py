@@ -5,6 +5,7 @@ from .model import *
 from .http import HTTP
 from .timetable import Timetable
 
+
 @reprable("first_name", "last_name", "class_symbol", "year", "school_name")
 class Student:
     def __init__(
