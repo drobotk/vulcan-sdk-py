@@ -63,8 +63,8 @@ class VulcanWeb:
         self._log.debug(info)
 
         login = self.email
-        if info.prefix and "@" not in login:
-            login = f"{info.prefix}\\{login}"
+        if info.prefix and info.prefix not in login and "@" not in login:
+            login = rf"{info.prefix}\{login}"
 
         if info.type is LoginType.CUFS:
             text, _ = await self.http.request(
@@ -131,9 +131,9 @@ class VulcanWeb:
     async def _login_uonetplus(
         self, symbol: str, wa: str, wctx: str, wresult: str
     ) -> bool:
-        text = await self.http.uonetplus_send_cert(symbol, wa, wctx, wresult)
-
-        if "nie został zarejestrowany" in text:
+        try:
+            text = await self.http.uonetplus_send_cert(symbol, wa, wctx, wresult)
+        except InvalidSymbolException:
             return False
 
         assert "VParam" in text

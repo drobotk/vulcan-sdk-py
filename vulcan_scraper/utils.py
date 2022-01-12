@@ -171,10 +171,17 @@ def check_for_vulcan_error(text: str):
     if s:
         tag = s[0]
         own = tag_own_textcontent(tag)
-        if (
+        if "Podany identyfikator klienta jest niepoprawny" in tag.text:
+            raise InvalidSymbolException(own)
+        elif (
             "Trwa aktualizacja bazy danych" in tag.text
             or "czasowo wyłączona" in tag.text
         ):
             raise ServiceUnavailableException(own)
         else:
             raise VulcanException(own)
+
+    if "nie został zarejestrowany w bazie szkoły" in text:
+        tag = soup.select("div:not([class])")[0]
+        own = tag_own_textcontent(tag)
+        raise InvalidSymbolException(own)

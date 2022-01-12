@@ -94,11 +94,10 @@ class HTTP:
 
     async def get_login_page(self, symbol: str = None) -> tuple[str, str]:
         realm = self.build_url(
-            subd="uonetplus", path=paths.UONETPLUS.LOGIN, symbol=symbol
-        )
+            subd="uonetplus")
         url = self.build_url(
             subd="cufs",
-            path=paths.CUFS.LOGIN,
+            path=paths.CUFS.START,
             symbol=symbol,
             realm=quote(quote(realm, safe=""), safe=""),  # double encoding
         )
@@ -108,7 +107,7 @@ class HTTP:
         self, symbol: str, wa: str, wctx: str, wresult: str
     ) -> str:
         url = self.build_url(
-            subd="uonetplus", path=paths.UONETPLUS.LOGIN, symbol=symbol
+            subd="uonetplus", path=paths.UONETPLUS.START, symbol=symbol
         )
         return (
             await self.request(

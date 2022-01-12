@@ -23,6 +23,10 @@ class NotLoggedInException(ScraperException):
     pass
 
 
+class InvalidSymbolException(VulcanException):
+    pass
+
+
 class ServiceUnavailableException(VulcanException):
     pass
 

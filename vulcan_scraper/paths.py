@@ -1,10 +1,10 @@
 class CUFS:
-    LOGIN: str = "/{SYMBOL}/Account/LogOn?ReturnUrl=%2F{SYMBOL}%2FFS%2FLS%3Fwa%3Dwsignin1.0%26wtrealm%3D{REALM}%26wctx%3D{REALM}"
+    START: str = "/{SYMBOL}/Account/LogOn?ReturnUrl=%2F{SYMBOL}%2FFS%2FLS%3Fwa%3Dwsignin1.0%26wtrealm%3D{REALM}%26wctx%3D{REALM}"
     LOGOUT: str = "/{SYMBOL}/FS/LS?wa=wsignout1.0"
 
 
 class UONETPLUS:
-    LOGIN: str = "/{SYMBOL}/LoginEndpoint.aspx"
+    START: str = "/{SYMBOL}"
     LOGOUT: str = "/{SYMBOL}/?logout=true"
 
 
