@@ -93,8 +93,7 @@ class HTTP:
         return res.data
 
     async def get_login_page(self, symbol: str = None) -> tuple[str, str]:
-        realm = self.build_url(
-            subd="uonetplus")
+        realm = self.build_url(subd="uonetplus")
         url = self.build_url(
             subd="cufs",
             path=paths.CUFS.START,
