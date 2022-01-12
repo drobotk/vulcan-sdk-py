@@ -5,10 +5,10 @@ class ScraperException(Exception):
     def __init__(self, *args: object):  # this is weird
         if args:
             super().__init__(*args)
-            getLogger(__name__).error(f'{self.__class__.__name__}: {", ".join(args)}')
+            getLogger(__name__).debug(f'{self.__class__.__name__}: {", ".join(args)}')
         else:
             super().__init__()
-            getLogger(__name__).error(f"{self.__class__.__name__}")
+            getLogger(__name__).debug(f"{self.__class__.__name__}")
 
 
 class HTTPException(ScraperException):

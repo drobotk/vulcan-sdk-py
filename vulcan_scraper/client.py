@@ -46,12 +46,14 @@ class VulcanWeb:
         self._instances: list[str] = []
         self._instance = ""
 
+        self._cufs_logged_in = False
         self.logged_in = False
         self.students: list[Student] = []
 
     async def login(self):
         """Attempts the login process using credentials passed in the constructor"""
 
+        self._cufs_logged_in = False
         self.logged_in = False
 
         info = await self._get_login_info()
@@ -104,6 +106,8 @@ class VulcanWeb:
             )
 
         cres = CertificateResponse(text)
+
+        self._cufs_logged_in = True
 
         if not self.symbol:
             symbols = utils.extract_symbols(cres.wresult)
@@ -211,20 +215,19 @@ class VulcanWeb:
         return info
 
     async def logout(self):
-        if not self.logged_in:
-            raise NotLoggedInException
+        if self.logged_in:
+            await self.http.uonetplus_logout(self.symbol)
+        if self._cufs_logged_in:
+            await self.http.cufs_logout(self.symbol)
 
-        await self.http.uonetplus_logout(self.symbol)
-        await self.http.cufs_logout(self.symbol)
-        self.http.session.cookie_jar.clear()
+        self._cufs_logged_in = False
         self.logged_in = False
+        self.http.session.cookie_jar.clear()
 
     async def close(self):
         """Logs out and closes the client"""
 
-        if self.logged_in:
-            await self.logout()
-
+        await self.logout()
         await self.http.close()
 
     async def __aenter__(self):
