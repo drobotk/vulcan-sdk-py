@@ -102,26 +102,17 @@ class HTTP:
         )
         return await self.request("GET", url)
 
-    async def uonetplus_send_cert(
-        self, symbol: str, wa: str, wctx: str, wresult: str
-    ) -> str:
+    async def execute_cert_form(self, cres: CertificateResponse) -> str:
+        return (await self.http.request("POST", cres.action, data=cres.request_body))[0]
+
+    async def uonetplus_send_cert(self, symbol: str, data: dict[str, str]) -> str:
         url = self.build_url(
             subd="uonetplus", path=paths.UONETPLUS.START, symbol=symbol
         )
-        return (
-            await self.request(
-                "POST", url, data={"wa": wa, "wctx": wctx, "wresult": wresult}
-            )
-        )[0]
+        return (await self.request("POST", url, data=data))[0]
 
     async def cufs_logout(self, symbol) -> str:
         url = self.build_url(subd="cufs", path=paths.CUFS.LOGOUT, symbol=symbol)
-        return (await self.request("GET", url))[0]
-
-    async def uonetplus_logout(self, symbol) -> str:
-        url = self.build_url(
-            subd="uonetplus", path=paths.UONETPLUS.LOGOUT, symbol=symbol
-        )
         return (await self.request("GET", url))[0]
 
     async def uczen_start(self, symbol: str, instance: str) -> str:

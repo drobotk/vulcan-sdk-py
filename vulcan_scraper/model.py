@@ -45,15 +45,25 @@ class CertificateResponse:
     def __init__(self, text: str):
         soup = BeautifulSoup(text, "lxml")
         try:
-            self.wa = soup.select('input[name="wa"]')[0]["value"]
-            self.wctx = soup.select('input[name="wctx"]')[0]["value"]
-            self.wresult = soup.select('input[name="wresult"]')[0]["value"]
-            self.action = soup.select("form")[0]["action"]
+            self.action: str = soup.select("form")[0]["action"]
+            self.wa: str = soup.select('input[name="wa"]')[0]["value"]
+            self.wresult: str = soup.select('input[name="wresult"]')[0]["value"]
+
+            s = soup.select('input[name="wctx"]')
+            self.wctx: str = s[0]["value"] if s else None
 
         except Exception as e:
             raise ScraperException(
                 f"Certificate Response parse error: {e.__class__.__name__}: {e}"
             )
+
+    @property
+    def request_body(self) -> dict[str, str]:
+        data = {"wa": self.wa, "wresult": self.wresult}
+        if self.wctx:
+            data["wctx"] = self.wctx
+
+        return data
 
 
 @dataclass

@@ -13,7 +13,7 @@ async def main():
         student = students[0]
 
         # jakikolwiek dzień danego tygodnia; można użyć datetime.now()
-        date = datetime(2022,1,12)
+        date = datetime(2022, 1, 12)
 
         timetable = await student.get_timetable(date)
         for day in timetable.days:

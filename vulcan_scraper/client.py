@@ -56,13 +56,39 @@ class VulcanWeb:
         self._cufs_logged_in = False
         self.logged_in = False
 
+        cres = await self._send_credentials()
+        self._cufs_logged_in = True
+
+        if not self.symbol:
+            symbols = utils.extract_symbols(cres.wresult)
+            self._log.debug(f"Symbols: { ', '.join(symbols) }")
+
+        else:
+            symbols = [self.symbol]
+
+        try:
+            symbols.remove(self.http.SYMBOL_DEFAULT)
+        except ValueError:
+            pass
+
+        for s in symbols:
+            if await self._login_uonetplus(s, cres):
+                self.logged_in = True
+                self.symbol = s
+                break
+
+        if not self.logged_in:
+            raise NoValidSymbolException(
+                f"Could not login on any symbol ({ ', '.join(symbols) })"
+            )
+
+    async def _send_credentials(self) -> CertificateResponse:
         info = await self._get_login_info()
+        self._log.debug(info)
         if info.type is LoginType.UNKNOWN:
             raise ScraperException(
                 f'Unknown login type on "{self.http.base_host}/{self.symbol}"'
             )
-
-        self._log.debug(info)
 
         login = self.email
         if info.prefix and info.prefix not in login and "@" not in login:
@@ -97,46 +123,15 @@ class VulcanWeb:
                 data = {"Username": login, "Password": self.password}
 
             text, _ = await self.http.request("POST", info.url, data=data)
-
             cres = CertificateResponse(text)
-            text, _ = await self.http.request(
-                "POST",
-                cres.action,
-                data={"wa": cres.wa, "wctx": cres.wctx, "wresult": cres.wresult},
-            )
 
-        cres = CertificateResponse(text)
+            text = await self.http.execute_cert_form(cres)
 
-        self._cufs_logged_in = True
+        return CertificateResponse(text)
 
-        if not self.symbol:
-            symbols = utils.extract_symbols(cres.wresult)
-            self._log.debug(f"Extracted symbols: { symbols }")
-
-        else:
-            symbols = [self.symbol]
-
+    async def _login_uonetplus(self, symbol: str, cres: CertificateResponse) -> bool:
         try:
-            symbols.remove(self.http.SYMBOL_DEFAULT)
-        except ValueError:
-            pass
-
-        for s in symbols:
-            if await self._login_uonetplus(s, cres.wa, cres.wctx, cres.wresult):
-                self.logged_in = True
-                self.symbol = s
-                break
-
-        if not self.logged_in:
-            raise NoValidSymbolException(
-                f"Could not login on any symbol ({ ', '.join(symbols) })"
-            )
-
-    async def _login_uonetplus(
-        self, symbol: str, wa: str, wctx: str, wresult: str
-    ) -> bool:
-        try:
-            text = await self.http.uonetplus_send_cert(symbol, wa, wctx, wresult)
+            text = await self.http.uonetplus_send_cert(symbol, cres.request_body)
         except InvalidSymbolException:
             return False
 
@@ -215,8 +210,7 @@ class VulcanWeb:
         return info
 
     async def logout(self):
-        if self.logged_in:
-            await self.http.uonetplus_logout(self.symbol)
+        self._log.debug("Logging out...")
         if self._cufs_logged_in:
             await self.http.cufs_logout(self.symbol)
 
