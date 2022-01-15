@@ -38,6 +38,7 @@ class TimetableDay:
     date: datetime
     lessons: list[TimetableLesson]
     additionals: list[TimetableAdditionalLesson]
+    description: str = None
 
     def __str__(self) -> str:
         return self.date.strftime("%A, %d %B %Y")
@@ -45,29 +46,14 @@ class TimetableDay:
 
 CLASS_CANCELLED: str = "x-treelabel-inv"
 CLASS_CHANGED: str = "x-treelabel-zas"
-OLDFORMAT_CLASS_CHANGES: str = "x-treelabel-rlz"
+OLDFORMAT_CLASS_COMMENT: str = "x-treelabel-rlz"
 
-re_substitute_teacher = re.compile(r"\(zastępstwo: ([^,]+?)\)")
+re_substitute_teacher = re.compile(r"\(zastępstwo: (.+?)\)")
 re_moved_to = re.compile(r"\(przeniesiona na lekcję (\d+), ([0-9\.]+?)\)")
 re_oldformat_changes = re.compile(r"\(zastępstwo: (.+?), sala (.+?)\)")
 
 
 def parse_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
-    teachers = []
-    for m in re_substitute_teacher.finditer(comment):
-        name = " ".join(m.group(1).split(" ")[::-1])
-        teachers.append(name)
-        comment = comment.replace(m.group(), "", 1)
-
-    if teachers:
-        teacher = ", ".join(teachers)
-        lesson.new_teacher = teacher
-        lesson.changed = True
-
-        # vulcan bug: replaced teachers change to the substitute teachers after the lesson happens
-        if lesson.teacher == teacher:
-            lesson.teacher = ""
-
     teachers = []
     rooms = []
     for m in re_oldformat_changes.finditer(comment):
@@ -85,6 +71,21 @@ def parse_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
         if room != lesson.room:
             lesson.new_room = room
             lesson.changed = True
+
+    teachers = []
+    for m in re_substitute_teacher.finditer(comment):
+        name = " ".join(m.group(1).split(" ")[::-1])
+        teachers.append(name)
+        comment = comment.replace(m.group(), "", 1)
+
+    if teachers:
+        teacher = ", ".join(teachers)
+        lesson.new_teacher = teacher
+        lesson.changed = True
+
+        # vulcan bug: replaced teachers change to the substitute teachers after the lesson happens
+        if lesson.teacher == teacher:
+            lesson.teacher = ""
 
     return comment.strip(" ()")
 
@@ -138,7 +139,7 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
         if len(spans) == 3:
             parse_lesson_info(lesson, divtext, spans[0], spans[1], spans[2])
         elif len(spans) == 4:
-            if OLDFORMAT_CLASS_CHANGES in spans[3]["class"]:
+            if OLDFORMAT_CLASS_COMMENT in spans[3]["class"]:
                 parse_lesson_info(
                     lesson, spans[3].text.strip(), spans[0], spans[1], spans[2]
                 )
@@ -206,9 +207,10 @@ class Timetable:
         self.days: list[TimetableDay] = []
 
         for i, h in enumerate(data.headers[1:]):  # first column is lesson times
-            date = h.text.split("<br />")[1]
-            date = datetime.strptime(date, "%d.%m.%Y")
-            day = TimetableDay(date=date, lessons=[], additionals=[])
+            split = h.text.split("<br />")
+            date = datetime.strptime(split[1], "%d.%m.%Y")
+            desc = split[2] if len(split) > 2 else None
+            day = TimetableDay(date=date, lessons=[], additionals=[], description=desc)
             for r in data.rows:
                 lesson = parse_lesson(date, r[0], r[i + 1])
                 if lesson:
