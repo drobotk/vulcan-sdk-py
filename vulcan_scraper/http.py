@@ -103,7 +103,7 @@ class HTTP:
         return await self.request("GET", url)
 
     async def execute_cert_form(self, cres: CertificateResponse) -> str:
-        return (await self.http.request("POST", cres.action, data=cres.request_body))[0]
+        return (await self.request("POST", cres.action, data=cres.request_body))[0]
 
     async def uonetplus_send_cert(self, symbol: str, data: dict[str, str]) -> str:
         url = self.build_url(
