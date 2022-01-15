@@ -53,7 +53,13 @@ re_moved_to = re.compile(r"\(przeniesiona na lekcję (\d+), ([0-9\.]+?)\)")
 re_oldformat_changes = re.compile(r"\(zastępstwo: (.+?), sala (.+?)\)")
 
 
+def reverse_teacher_name(name: str) -> str:
+    i = name.rindex(" ")
+    return name[i + 1 :] + " " + name[:i]
+
+
 def parse_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
+    # old format
     teachers = []
     rooms = []
     for m in re_oldformat_changes.finditer(comment):
@@ -72,9 +78,10 @@ def parse_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
             lesson.new_room = room
             lesson.changed = True
 
+    # current format
     teachers = []
     for m in re_substitute_teacher.finditer(comment):
-        name = " ".join(m.group(1).split(" ")[::-1])
+        name = reverse_teacher_name(m.group(1))
         teachers.append(name)
         comment = comment.replace(m.group(), "", 1)
 
