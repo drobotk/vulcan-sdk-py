@@ -18,6 +18,7 @@ async def main():
         timetable = await student.get_timetable(date)
         for day in timetable.days:
             print()
+            print(day)
             print("\n".join([repr(l) for l in day.lessons]))
 
 

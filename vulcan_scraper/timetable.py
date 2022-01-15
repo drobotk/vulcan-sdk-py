@@ -57,7 +57,7 @@ def process_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
         lesson.changed = True
 
         # vulcan bug: replaced teachers change to the substitute teachers after the lesson happens
-        if lesson.teacher == teacher:  
+        if lesson.teacher == teacher:
             lesson.teacher = ""
 
     teachers = []
