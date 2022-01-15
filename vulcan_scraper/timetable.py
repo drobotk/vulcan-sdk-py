@@ -1,6 +1,6 @@
 import re
-from dataclasses import dataclass
-from datetime import datetime, date, time
+from dataclasses import dataclass, field
+from datetime import datetime, time
 from bs4 import BeautifulSoup, element
 
 from .model import TimetableResponse
@@ -9,20 +9,21 @@ from .utils import tag_own_textcontent, sub_after, sub_before
 
 @dataclass
 class TimetableLesson:
-    number: int = None
-    start: datetime = None
-    end: datetime = None
-    name: str = None
-    room: str = None
-    teacher: str = None
-    group: str = None
-    comment: str = None
+    number: int
+    start: datetime = field(repr=False)
+    end: datetime = field(repr=False)
+    subject: str = ""
+    room: str = ""
+    teacher: str = ""
+    group: str = ""
+    comment: str = ""
     cancelled: bool = False
     changed: bool = False
-    new_name: str = None
-    new_room: str = None
-    new_teacher: str = None
-    new_comment: str = None
+    new_subject: str = ""
+    new_room: str = ""
+    new_teacher: str = ""
+    new_group: str = ""
+    new_comment: str = ""
 
 
 @dataclass
@@ -30,11 +31,17 @@ class TimetableDay:
     date: datetime
     lessons: list[TimetableLesson]
 
+    def __str__(self) -> str:
+        return self.date.strftime("%A, %d %B %Y")
+
 
 CLASS_CANCELLED: str = "x-treelabel-inv"
 CLASS_CHANGED: str = "x-treelabel-zas"
+OLDFORMAT_CLASS_CHANGES: str = "x-treelabel-rlz"
 
-re_substitute_teacher = re.compile(r"\(zastępstwo: (.+?)\)")
+re_substitute_teacher = re.compile(r"\(zastępstwo: ([^,]+?)\)")
+re_moved_to = re.compile(r"\(przeniesiona na lekcję (\d+), ([0-9\.]+?)\)")
+re_oldformat_changes = re.compile(r"\(zastępstwo: (.+?), sala (.+?)\)")
 
 
 def process_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
@@ -49,6 +56,28 @@ def process_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
         lesson.new_teacher = teacher
         lesson.changed = True
 
+        # vulcan bug: replaced teachers change to the substitute teachers after the lesson happens
+        if lesson.teacher == teacher:  
+            lesson.teacher = ""
+
+    teachers = []
+    rooms = []
+    for m in re_oldformat_changes.finditer(comment):
+        teachers.append(m.group(1))
+        rooms.append(m.group(2))
+        comment = comment.replace(m.group(), "", 1)
+
+    if teachers and rooms:
+        teacher = ", ".join(teachers)
+        room = ", ".join(rooms)
+        if teacher != lesson.teacher:
+            lesson.new_teacher = teacher
+            lesson.changed = True
+
+        if room != lesson.room:
+            lesson.new_room = room
+            lesson.changed = True
+
     return comment.strip(" ()")
 
 
@@ -59,8 +88,8 @@ def parse_lesson_simple(
     roomspan: element.Tag,
     teacherspan: element.Tag,
 ):
-    lesson.name = sub_before(namespan.text, "[").strip()
-    lesson.group = sub_after(namespan.text, lesson.name, "").strip(" []")
+    lesson.subject = sub_before(namespan.text, "[").strip()
+    lesson.group = sub_after(namespan.text, lesson.subject, "").strip(" []")
     lesson.room = roomspan.text.strip()
     lesson.teacher = teacherspan.text.strip()
 
@@ -87,7 +116,12 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
     if not divs:
         return
 
-    lesson = TimetableLesson()
+    split = header.split("<br />")
+    number = int(split[0])
+    start = datetime.combine(date.date(), time.fromisoformat(split[1]))
+    end = datetime.combine(date.date(), time.fromisoformat(split[2]))
+
+    lesson = TimetableLesson(number=number, start=start, end=end)
 
     if len(divs) == 1:
         div = divs[0]
@@ -96,20 +130,52 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
         if len(spans) == 3:
             parse_lesson_simple(lesson, divtext, spans[0], spans[1], spans[2])
         elif len(spans) == 4:
+            if OLDFORMAT_CLASS_CHANGES in spans[3]["class"]:
+                parse_lesson_simple(
+                    lesson, spans[3].text.strip(), spans[0], spans[1], spans[2]
+                )
+            else:
+                parse_lesson_simple(lesson, divtext, spans[0], spans[2], spans[3])
+        else:
+            lesson.subject = f"TODO: {len(spans)} span timetable entry"
+
+    elif len(divs) == 2:
+        old = divs[0]
+        divtext = tag_own_textcontent(old)
+        spans = old.select("span")
+        if len(spans) == 3:
+            parse_lesson_simple(lesson, divtext, spans[0], spans[1], spans[2])
+        elif len(spans) == 4:
             parse_lesson_simple(lesson, divtext, spans[0], spans[2], spans[3])
         else:
-            lesson.name = f"TODO: {len(spans)} span timetable entry"
+            lesson.subject = f"TODO: 2 div {len(spans)} span timetable entry"
 
+        new_lesson = TimetableLesson(number=0, start=None, end=None)
+        new = divs[1]
+        divtext = tag_own_textcontent(new)
+        spans = new.select("span")
+        if len(spans) == 3:
+            parse_lesson_simple(new_lesson, divtext, spans[0], spans[1], spans[2])
+        elif len(spans) == 4:
+            parse_lesson_simple(new_lesson, divtext, spans[0], spans[2], spans[3])
+        else:
+            new_lesson.subject = f"TODO: 2 div {len(spans)} span timetable entry"
+
+        if new_lesson.subject and new_lesson.subject != lesson.subject:
+            lesson.new_subject = new_lesson.subject
+        if new_lesson.room and new_lesson.room != lesson.room:
+            lesson.new_room = new_lesson.room
+        if new_lesson.teacher and new_lesson.teacher != lesson.teacher:
+            lesson.new_teacher = new_lesson.teacher
+        if new_lesson.group and new_lesson.group != lesson.group:
+            lesson.new_group = new_lesson.group
+        if new_lesson.comment and new_lesson.comment != lesson.comment:
+            lesson.new_comment = new_lesson.comment
+
+        lesson.cancelled = False
+        lesson.changed = True
     else:
-        lesson.name = f"TODO: {len(divs)} div timetable entry"
-
-    split = header.split("<br />")
-    lesson.number = int(split[0])
-
-    start = time.fromisoformat(split[1])
-    end = time.fromisoformat(split[2])
-    lesson.start = datetime.combine(date.date(), start)
-    lesson.end = datetime.combine(date.date(), end)
+        lesson.subject = f"TODO: {len(divs)} div timetable entry"
 
     return lesson
 
