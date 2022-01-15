@@ -20,6 +20,7 @@ async def main():
             print()
             print(day)
             print("\n".join([repr(l) for l in day.lessons]))
+            print("\n".join([repr(l) for l in day.additionals]))
 
 
 if __name__ == "__main__":

@@ -239,6 +239,14 @@ class TimetableHeader:
         self.flex: int = data["Flex"]
 
 
+class TimetableAdditional:
+    def __init__(self, **data):
+        self.header: str = data["Header"]
+        self.descriptions: list = [
+            d["Description"] for d in data["Descriptions"]
+        ]  # weird
+
+
 class TimetableResponse:
     def __init__(self, **data):
         # self.date: datetime = datetime.fromisoformat(data["Data"])
@@ -247,4 +255,6 @@ class TimetableResponse:
             TimetableHeader(**d) for d in data["Headers"]
         ]
         self.rows: list[list[str]] = data["Rows"]
-        self.additionals: list[Any] = data["Additionals"]
+        self.additionals: list[TimetableAdditional] = [
+            TimetableAdditional(**d) for d in data["Additionals"]
+        ]

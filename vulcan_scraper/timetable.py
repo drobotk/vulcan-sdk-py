@@ -4,7 +4,7 @@ from datetime import datetime, time
 from bs4 import BeautifulSoup, element
 
 from .model import TimetableResponse
-from .utils import tag_own_textcontent, sub_after, sub_before
+from .utils import tag_own_textcontent, sub_after, sub_before, get_first
 
 
 @dataclass
@@ -27,9 +27,17 @@ class TimetableLesson:
 
 
 @dataclass
+class TimetableAdditionalLesson:
+    start: datetime
+    end: datetime
+    subject: str
+
+
+@dataclass
 class TimetableDay:
     date: datetime
     lessons: list[TimetableLesson]
+    additionals: list[TimetableAdditionalLesson]
 
     def __str__(self) -> str:
         return self.date.strftime("%A, %d %B %Y")
@@ -44,7 +52,7 @@ re_moved_to = re.compile(r"\(przeniesiona na lekcję (\d+), ([0-9\.]+?)\)")
 re_oldformat_changes = re.compile(r"\(zastępstwo: (.+?), sala (.+?)\)")
 
 
-def process_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
+def parse_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
     teachers = []
     for m in re_substitute_teacher.finditer(comment):
         name = " ".join(m.group(1).split(" ")[::-1])
@@ -81,7 +89,7 @@ def process_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
     return comment.strip(" ()")
 
 
-def parse_lesson_simple(
+def parse_lesson_info(
     lesson: TimetableLesson,
     divtext: str,
     namespan: element.Tag,
@@ -107,7 +115,7 @@ def parse_lesson_simple(
     ):
         lesson.changed = True
 
-    lesson.comment = process_lesson_comment(lesson, divtext)
+    lesson.comment = parse_lesson_comment(lesson, divtext)
 
 
 def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
@@ -128,14 +136,14 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
         divtext = tag_own_textcontent(div)
         spans = div.select("span")
         if len(spans) == 3:
-            parse_lesson_simple(lesson, divtext, spans[0], spans[1], spans[2])
+            parse_lesson_info(lesson, divtext, spans[0], spans[1], spans[2])
         elif len(spans) == 4:
             if OLDFORMAT_CLASS_CHANGES in spans[3]["class"]:
-                parse_lesson_simple(
+                parse_lesson_info(
                     lesson, spans[3].text.strip(), spans[0], spans[1], spans[2]
                 )
             else:
-                parse_lesson_simple(lesson, divtext, spans[0], spans[2], spans[3])
+                parse_lesson_info(lesson, divtext, spans[0], spans[2], spans[3])
         else:
             lesson.subject = f"TODO: {len(spans)} span timetable entry"
 
@@ -144,9 +152,9 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
         divtext = tag_own_textcontent(old)
         spans = old.select("span")
         if len(spans) == 3:
-            parse_lesson_simple(lesson, divtext, spans[0], spans[1], spans[2])
+            parse_lesson_info(lesson, divtext, spans[0], spans[1], spans[2])
         elif len(spans) == 4:
-            parse_lesson_simple(lesson, divtext, spans[0], spans[2], spans[3])
+            parse_lesson_info(lesson, divtext, spans[0], spans[2], spans[3])
         else:
             lesson.subject = f"TODO: 2 div {len(spans)} span timetable entry"
 
@@ -155,9 +163,9 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
         divtext = tag_own_textcontent(new)
         spans = new.select("span")
         if len(spans) == 3:
-            parse_lesson_simple(new_lesson, divtext, spans[0], spans[1], spans[2])
+            parse_lesson_info(new_lesson, divtext, spans[0], spans[1], spans[2])
         elif len(spans) == 4:
-            parse_lesson_simple(new_lesson, divtext, spans[0], spans[2], spans[3])
+            parse_lesson_info(new_lesson, divtext, spans[0], spans[2], spans[3])
         else:
             new_lesson.subject = f"TODO: 2 div {len(spans)} span timetable entry"
 
@@ -180,6 +188,15 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
     return lesson
 
 
+def parse_additional_lesson(date: datetime, text: str) -> TimetableAdditionalLesson:
+    split = text.split(" ")
+    start = datetime.combine(date.date(), time.fromisoformat(split[0]))
+    end = datetime.combine(date.date(), time.fromisoformat(split[2]))
+    subject = " ".join(split[3:])
+
+    return TimetableAdditionalLesson(start=start, end=end, subject=subject)
+
+
 class Timetable:
     def __init__(self, data: TimetableResponse):
         self.days: list[TimetableDay] = []
@@ -187,10 +204,21 @@ class Timetable:
         for i, h in enumerate(data.headers[1:]):  # first column is lesson times
             date = h.text.split("<br />")[1]
             date = datetime.strptime(date, "%d.%m.%Y")
-            day = TimetableDay(date=date, lessons=[])
+            day = TimetableDay(date=date, lessons=[], additionals=[])
             for r in data.rows:
                 lesson = parse_lesson(date, r[0], r[i + 1])
                 if lesson:
                     day.lessons.append(lesson)
 
             self.days.append(day)
+
+        for a in data.additionals:
+            date = a.header.split(", ")[1]
+            date = datetime.strptime(date, "%d.%m.%Y")
+            day = get_first(self.days, date=date) or TimetableDay(
+                date=date, lessons=[], additionals=[]
+            )
+            for d in a.descriptions:
+                lesson = parse_additional_lesson(date, d)
+                if lesson:
+                    day.additionals.append(lesson)
