@@ -188,7 +188,11 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
     return lesson
 
 
-def parse_additional_lesson(date: datetime, text: str) -> TimetableAdditionalLesson:
+def parse_additional_lesson(
+    date: datetime, description: str
+) -> TimetableAdditionalLesson:
+    soup = BeautifulSoup(description, "lxml")
+    text = soup.text.strip()
     split = text.split(" ")
     start = datetime.combine(date.date(), time.fromisoformat(split[0]))
     end = datetime.combine(date.date(), time.fromisoformat(split[2]))

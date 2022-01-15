@@ -242,7 +242,7 @@ class TimetableHeader:
 class TimetableAdditional:
     def __init__(self, **data):
         self.header: str = data["Header"]
-        self.descriptions: list = [
+        self.descriptions: list[str] = [
             d["Description"] for d in data["Descriptions"]
         ]  # weird
 
