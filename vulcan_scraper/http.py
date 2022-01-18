@@ -72,7 +72,7 @@ class HTTP:
             if res.content_type.lower().split("/")[-1] != "json":
                 check_for_vulcan_error(text)
 
-            return (text, res.url)
+            return (text, str(res.url))
 
     async def api_request(self, verb: str, url: str, **kwargs) -> Any:
         text, _ = await self.request(verb, url, **kwargs)

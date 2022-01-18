@@ -1,5 +1,5 @@
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from operator import attrgetter
 from time import perf_counter
 from typing import *
@@ -93,10 +93,10 @@ class LoginInfo:
     prefix: str
     url: str = None  # set later
     # adfs cards
-    vs: str = None
-    vsg: str = None
-    ev: str = None
-    db: str = None
+    vs: str = field(default=None, repr=False)
+    vsg: str = field(default=None, repr=False)
+    ev: str = field(default=None, repr=False)
+    db: str = field(default=None, repr=False)
 
 
 # wulkanowy sdk <3

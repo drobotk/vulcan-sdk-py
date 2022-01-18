@@ -38,7 +38,7 @@ class TimetableDay:
     date: datetime
     lessons: list[TimetableLesson]
     additionals: list[TimetableAdditionalLesson]
-    description: str = None
+    description: str = ""
 
     def __str__(self) -> str:
         return self.date.strftime("%A, %d %B %Y")
@@ -216,7 +216,7 @@ class Timetable:
         for i, h in enumerate(data.headers[1:]):  # first column is lesson times
             split = h.text.split("<br />")
             date = datetime.strptime(split[1], "%d.%m.%Y")
-            desc = split[2] if len(split) > 2 else None
+            desc = split[2] if len(split) > 2 else ""
             day = TimetableDay(date=date, lessons=[], additionals=[], description=desc)
             for r in data.rows:
                 lesson = parse_lesson(date, r[0], r[i + 1])
@@ -235,3 +235,5 @@ class Timetable:
                 lesson = parse_additional_lesson(date, d)
                 if lesson:
                     day.additionals.append(lesson)
+
+            day.additionals.sort(key=lambda a: a.start)
