@@ -12,7 +12,11 @@ class ScraperException(Exception):
 
 
 class HTTPException(ScraperException):
-    pass
+    def __init__(self, verb: str, url: str, status_code: int):
+        self.verb = verb
+        self.url = url
+        self.status_code = status_code
+        super().__init__(f"{verb} {url} got status code {status_code}")
 
 
 class VulcanException(ScraperException):

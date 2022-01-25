@@ -7,7 +7,7 @@ from datetime import datetime
 from . import paths
 from .error import *
 from .model import *
-from .utils import check_for_vulcan_error
+from .utils import error_interceptor
 
 
 class HTTP:
@@ -57,7 +57,9 @@ class HTTP:
 
         return url
 
-    async def request(self, verb: str, url: str, **kwargs) -> tuple[str, str]:
+    async def request(
+        self, verb: str, url: str, *, not_loggedin_callback: Callable = None, **kwargs
+    ) -> tuple[str, str]:
         verb = verb.upper()
         async with self.session.request(verb, url, **kwargs) as res:
             for r in res.history:
@@ -66,11 +68,11 @@ class HTTP:
             self._log.debug(f"{res.status} {res.method} {res.url}")
 
             if not res.ok:
-                raise HTTPException(f"{verb} {url} got {res.status}")
+                raise HTTPException(verb, url, res.status)
 
             text = await res.text()
             if res.content_type.lower().split("/")[-1] != "json":
-                check_for_vulcan_error(text)
+                error_interceptor(text)
 
             return (text, str(res.url))
 
@@ -93,7 +95,7 @@ class HTTP:
         return res.data
 
     async def get_login_page(self, symbol: str = None) -> tuple[str, str]:
-        realm = self.build_url(subd="uonetplus")
+        realm = self.build_url(subd="cufs")
         url = self.build_url(
             subd="cufs",
             path=paths.CUFS.START,

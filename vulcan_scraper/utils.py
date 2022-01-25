@@ -153,7 +153,7 @@ def sub_after(a: str, b: str, c: str = None) -> str:
 
 
 # sdk/ErrorInterceptor.kt <3
-def check_for_vulcan_error(text: str):
+def error_interceptor(text: str):
     soup = BeautifulSoup(text, "lxml")
 
     s = soup.select(".errorBlock .errorTitle, .errorBlock .errorMessage")
