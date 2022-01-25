@@ -9,6 +9,8 @@ from .utils import tag_own_textcontent, sub_after, sub_before, get_first
 
 @dataclass
 class TimetableLesson:
+    _html: str = field(repr=False)
+
     number: int
     start: datetime = field(repr=False)
     end: datetime = field(repr=False)
@@ -109,21 +111,29 @@ def parse_lesson_info(
     lesson.room = roomspan.text.strip()
     lesson.teacher = teacherspan.text.strip()
 
-    if (
-        CLASS_CANCELLED in namespan["class"]
-        and CLASS_CANCELLED in roomspan["class"]
-        and CLASS_CANCELLED in teacherspan["class"]
-    ):
+    if CLASS_CANCELLED in namespan["class"]:
         lesson.cancelled = True
-
-    if (
-        CLASS_CHANGED in namespan["class"]
-        and CLASS_CHANGED in roomspan["class"]
-        and CLASS_CHANGED in teacherspan["class"]
-    ):
+    if CLASS_CHANGED in namespan["class"]:
         lesson.changed = True
 
+    # i wonder if this will ever fail:
+    assert lesson.cancelled is False or lesson.changed is False
+
     lesson.comment = parse_lesson_comment(lesson, divtext)
+
+
+def parse_spans(lesson: TimetableLesson, divtext: str, spans: list[element.Tag]):
+    if len(spans) == 3:
+        parse_lesson_info(lesson, divtext, spans[0], spans[1], spans[2])
+    elif len(spans) == 4:
+        if OLDFORMAT_CLASS_COMMENT in spans[3]["class"]:
+            parse_lesson_info(
+                lesson, spans[3].text.strip(), spans[0], spans[1], spans[2]
+            )
+        else:
+            parse_lesson_info(lesson, divtext, spans[0], spans[2], spans[3])
+    else:
+        lesson.subject = f"TODO: {len(spans)} span timetable entry"
 
 
 def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
@@ -137,45 +147,33 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
     start = datetime.combine(date.date(), time.fromisoformat(split[1]))
     end = datetime.combine(date.date(), time.fromisoformat(split[2]))
 
-    lesson = TimetableLesson(number=number, start=start, end=end)
+    lesson = TimetableLesson(_html=text, number=number, start=start, end=end)
 
     if len(divs) == 1:
         div = divs[0]
         divtext = tag_own_textcontent(div)
         spans = div.select("span")
-        if len(spans) == 3:
-            parse_lesson_info(lesson, divtext, spans[0], spans[1], spans[2])
-        elif len(spans) == 4:
-            if OLDFORMAT_CLASS_COMMENT in spans[3]["class"]:
-                parse_lesson_info(
-                    lesson, spans[3].text.strip(), spans[0], spans[1], spans[2]
-                )
-            else:
-                parse_lesson_info(lesson, divtext, spans[0], spans[2], spans[3])
-        else:
-            lesson.subject = f"TODO: {len(spans)} span timetable entry"
+        parse_spans(lesson, divtext, spans)
 
     elif len(divs) == 2:
         old = divs[0]
-        divtext = tag_own_textcontent(old)
-        spans = old.select("span")
-        if len(spans) == 3:
-            parse_lesson_info(lesson, divtext, spans[0], spans[1], spans[2])
-        elif len(spans) == 4:
-            parse_lesson_info(lesson, divtext, spans[0], spans[2], spans[3])
-        else:
-            lesson.subject = f"TODO: 2 div {len(spans)} span timetable entry"
-
-        new_lesson = TimetableLesson(number=0, start=None, end=None)
         new = divs[1]
+        old_s = old.select("span")
+        new_s = new.select("span")
+        if (
+            CLASS_CHANGED in old_s[0]["class"] and CLASS_CANCELLED in new_s[0]["class"]
+        ):  # invert
+            old, new = new, old
+            old_s, new_s = new_s, old_s
+
+        divtext = tag_own_textcontent(old)
+
+        parse_spans(lesson, divtext, old_s)
+
+        new_lesson = TimetableLesson(_html="", number=0, start=None, end=None)
         divtext = tag_own_textcontent(new)
-        spans = new.select("span")
-        if len(spans) == 3:
-            parse_lesson_info(new_lesson, divtext, spans[0], spans[1], spans[2])
-        elif len(spans) == 4:
-            parse_lesson_info(new_lesson, divtext, spans[0], spans[2], spans[3])
-        else:
-            new_lesson.subject = f"TODO: 2 div {len(spans)} span timetable entry"
+
+        parse_spans(new_lesson, divtext, new_s)
 
         if new_lesson.subject and new_lesson.subject != lesson.subject:
             lesson.new_subject = new_lesson.subject
