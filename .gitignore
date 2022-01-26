@@ -150,3 +150,4 @@ test*.py
 vulcan_scraper/__pycache__/
 *.code-workspace
 resources/
+src/tests/

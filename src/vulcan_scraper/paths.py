@@ -4,7 +4,7 @@ class CUFS:
 
 
 class UONETPLUS:
-    START: str = "/{SYMBOL}"
+    START: str = "/{SYMBOL}/LoginEndpoint.aspx"
 
 
 class UZYTKOWNIK:
