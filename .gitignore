@@ -146,8 +146,6 @@ cython_debug/
 
 ###################################
 
-test*.py
-vulcan_scraper/__pycache__/
+./test*.py
 *.code-workspace
-resources/
-src/tests/
+src/tests/bruh.py
