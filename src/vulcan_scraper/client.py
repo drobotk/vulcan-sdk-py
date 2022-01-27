@@ -210,8 +210,8 @@ class VulcanWeb:
         return info
 
     async def logout(self):
-        self._log.debug("Logging out...")
         if self._cufs_logged_in:
+            self._log.debug("Logging out...")
             await self.http.cufs_logout(self.symbol)
 
         self._cufs_logged_in = False

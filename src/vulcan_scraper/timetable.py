@@ -96,7 +96,7 @@ def parse_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
         if lesson.teacher == teacher:
             lesson.teacher = ""
 
-    return comment.strip(" ()")
+    return "; ".join(comment.removeprefix("(").removesuffix(")").split(")("))
 
 
 def parse_lesson_info(
@@ -122,7 +122,7 @@ def parse_lesson_info(
     lesson.comment = parse_lesson_comment(lesson, divtext)
 
 
-def parse_spans(lesson: TimetableLesson, divtext: str, spans: list[element.Tag]):
+def parse_div(lesson: TimetableLesson, divtext: str, spans: list[element.Tag]):
     if len(spans) == 3:
         parse_lesson_info(lesson, divtext, spans[0], spans[1], spans[2])
     elif len(spans) == 4:
@@ -132,6 +132,29 @@ def parse_spans(lesson: TimetableLesson, divtext: str, spans: list[element.Tag])
             )
         else:
             parse_lesson_info(lesson, divtext, spans[0], spans[2], spans[3])
+    elif len(spans) == 6 or len(spans) == 7:  # old format changes
+        old = (spans[0], spans[1], spans[2])
+        new = (spans[3], spans[4], spans[5])
+        if CLASS_CANCELLED in new[0]["class"]:  # invert
+            old, new = new, old
+
+        comment = spans[6].text.strip() if len(spans) == 7 else divtext
+        parse_lesson_info(lesson, comment, spans[0], spans[1], spans[2])
+
+        new_lesson = TimetableLesson(_html="", number=0, start=None, end=None)
+        parse_lesson_info(new_lesson, "", spans[3], spans[4], spans[5])
+
+        if new_lesson.subject and new_lesson.subject != lesson.subject:
+            lesson.new_subject = new_lesson.subject
+        if new_lesson.room and new_lesson.room != lesson.room:
+            lesson.new_room = new_lesson.room
+        if new_lesson.teacher and new_lesson.teacher != lesson.teacher:
+            lesson.new_teacher = new_lesson.teacher
+        if new_lesson.group and new_lesson.group != lesson.group:
+            lesson.new_group = new_lesson.group
+
+        lesson.cancelled = False
+        lesson.changed = True
     else:
         lesson.subject = f"TODO: {len(spans)} span timetable entry"
 
@@ -153,27 +176,25 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
         div = divs[0]
         divtext = tag_own_textcontent(div)
         spans = div.select("span")
-        parse_spans(lesson, divtext, spans)
+        parse_div(lesson, divtext, spans)
 
     elif len(divs) == 2:
         old = divs[0]
         new = divs[1]
         old_s = old.select("span")
         new_s = new.select("span")
-        if (
-            CLASS_CHANGED in old_s[0]["class"] and CLASS_CANCELLED in new_s[0]["class"]
-        ):  # invert
+        if CLASS_CANCELLED in new_s[0]["class"]:  # invert
             old, new = new, old
             old_s, new_s = new_s, old_s
 
         divtext = tag_own_textcontent(old)
 
-        parse_spans(lesson, divtext, old_s)
+        parse_div(lesson, divtext, old_s)
 
         new_lesson = TimetableLesson(_html="", number=0, start=None, end=None)
         divtext = tag_own_textcontent(new)
 
-        parse_spans(new_lesson, divtext, new_s)
+        parse_div(new_lesson, divtext, new_s)
 
         if new_lesson.subject and new_lesson.subject != lesson.subject:
             lesson.new_subject = new_lesson.subject
