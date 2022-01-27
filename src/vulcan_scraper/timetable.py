@@ -123,26 +123,36 @@ def parse_lesson_info(
 
 
 def parse_div(lesson: TimetableLesson, divtext: str, spans: list[element.Tag]):
-    if len(spans) == 3:
-        parse_lesson_info(lesson, divtext, spans[0], spans[1], spans[2])
+    comment = divtext
+    for s in spans.copy():
+        if OLDFORMAT_CLASS_COMMENT in s["class"]:
+            comment += s.text.strip()
+            spans.remove(s)
+
+    if len(spans) == 2:
+        parse_lesson_info(lesson, comment, spans[0], spans[1], element.Tag(name="span"))
+    elif len(spans) == 3:
+        parse_lesson_info(lesson, comment, spans[0], spans[1], spans[2])
     elif len(spans) == 4:
-        if OLDFORMAT_CLASS_COMMENT in spans[3]["class"]:
-            parse_lesson_info(
-                lesson, spans[3].text.strip(), spans[0], spans[1], spans[2]
-            )
-        else:
-            parse_lesson_info(lesson, divtext, spans[0], spans[2], spans[3])
-    elif len(spans) == 6 or len(spans) == 7:  # old format changes
-        old = (spans[0], spans[1], spans[2])
-        new = (spans[3], spans[4], spans[5])
+        parse_lesson_info(lesson, comment, spans[0], spans[2], spans[3])
+    elif len(spans) == 6 or len(spans) == 8:  # old format changes
+        old = (
+            (spans[0], spans[1], spans[2])
+            if len(spans) == 6
+            else (spans[0], spans[2], spans[3])
+        )
+        new = (
+            (spans[3], spans[4], spans[5])
+            if len(spans) == 6
+            else (spans[4], spans[6], spans[7])
+        )
         if CLASS_CANCELLED in new[0]["class"]:  # invert
             old, new = new, old
 
-        comment = spans[6].text.strip() if len(spans) == 7 else divtext
-        parse_lesson_info(lesson, comment, spans[0], spans[1], spans[2])
+        parse_lesson_info(lesson, comment, *old)
 
         new_lesson = TimetableLesson(_html="", number=0, start=None, end=None)
-        parse_lesson_info(new_lesson, "", spans[3], spans[4], spans[5])
+        parse_lesson_info(new_lesson, "", *new)
 
         if new_lesson.subject and new_lesson.subject != lesson.subject:
             lesson.new_subject = new_lesson.subject
@@ -183,6 +193,10 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
         new = divs[1]
         old_s = old.select("span")
         new_s = new.select("span")
+        if len(old_s) < 3 or len(new_s) < 3:
+            lesson.subject = f"TODO: {len(old_s) = }, {len(new_s) = }"
+            return
+
         if CLASS_CANCELLED in new_s[0]["class"]:  # invert
             old, new = new, old
             old_s, new_s = new_s, old_s
@@ -235,7 +249,7 @@ class Timetable:
         for i, h in enumerate(data.headers[1:]):  # first column is lesson times
             split = h.text.split("<br />")
             date = datetime.strptime(split[1], "%d.%m.%Y")
-            desc = split[2] if len(split) > 2 else ""
+            desc = "; ".join(split[2:])
             day = TimetableDay(date=date, lessons=[], additionals=[], description=desc)
             for r in data.rows:
                 lesson = parse_lesson(date, r[0], r[i + 1])
@@ -247,9 +261,11 @@ class Timetable:
         for a in data.additionals:
             date = a.header.split(", ")[1]
             date = datetime.strptime(date, "%d.%m.%Y")
-            day = get_first(self.days, date=date) or TimetableDay(
-                date=date, lessons=[], additionals=[]
-            )
+            day = get_first(self.days, date=date)
+            if not day:
+                day = TimetableDay(date=date, lessons=[], additionals=[])
+                self.days.append(day)
+
             for d in a.descriptions:
                 lesson = parse_additional_lesson(date, d)
                 if lesson:
