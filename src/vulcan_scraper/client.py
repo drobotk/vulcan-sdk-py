@@ -3,7 +3,13 @@ import asyncio
 import sys
 from typing import Optional
 
-from .error import *
+from .error import (
+    ScraperException,
+    InvalidSymbolException,
+    NotLoggedInException,
+    NoValidSymbolException,
+    VulcanException,
+)
 from .http import HTTP
 from .student import Student
 from .model import CertificateResponse, ReportingUnit

@@ -1,7 +1,14 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from .model import *
+from .model import (
+    reprable,
+    StudentRegister,
+    ReportingUnit,
+    GradesData,
+    NotesAndAchievementsData,
+    Meeting,
+)
 from .http import HTTP
 from .timetable import Timetable
 

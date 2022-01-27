@@ -2,11 +2,17 @@ import re
 from dataclasses import dataclass, field
 from operator import attrgetter
 from time import perf_counter
-from typing import *
+from typing import TypeVar, Iterable, Any, Optional
 from bs4 import BeautifulSoup, element
 
 from .enum import LoginType
-from .error import *
+from .error import (
+    ScraperException,
+    VulcanException,
+    BadCredentialsException,
+    ServiceUnavailableException,
+    InvalidSymbolException,
+)
 
 re_valid_symbol = re.compile(r"[a-zA-Z0-9]*")
 
@@ -133,7 +139,7 @@ def extract_login_info(text: str) -> LoginInfo:
 
 
 def tag_own_textcontent(tag: element.Tag) -> str:
-    return re.sub("\s+", " ", "".join(tag.findAll(text=True, recursive=False))).strip()
+    return re.sub(r"\s+", " ", "".join(tag.findAll(text=True, recursive=False))).strip()
 
 
 def sub_before(a: str, b: str, c: str = None) -> str:
@@ -163,7 +169,7 @@ def check_for_vulcan_error(text: str):
     # login errors
     s = soup.select(".ErrorMessage, #ErrorTextLabel, #loginArea #errorText")
     for tag in s:
-        msg = re.sub("\s+", " ", tag.text).strip()
+        msg = re.sub(r"\s+", " ", tag.text).strip()
         if msg:
             raise BadCredentialsException(msg)
 

@@ -5,8 +5,17 @@ from urllib.parse import quote
 from datetime import datetime
 
 from . import paths
-from .error import *
-from .model import *
+from .error import ScraperException, HTTPException, VulcanException
+from .model import (
+    ApiResponse,
+    CertificateResponse,
+    ReportingUnit,
+    StudentRegister,
+    GradesData,
+    NotesAndAchievementsData,
+    TimetableResponse,
+    Meeting,
+)
 from .utils import check_for_vulcan_error
 
 
@@ -74,7 +83,7 @@ class HTTP:
 
             return (text, str(res.url))
 
-    async def api_request(self, verb: str, url: str, **kwargs) -> Any:
+    async def api_request(self, verb: str, url: str, **kwargs):
         text, _ = await self.request(verb, url, **kwargs)
         try:
             data = loads(text)

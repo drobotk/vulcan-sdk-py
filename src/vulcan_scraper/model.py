@@ -1,9 +1,9 @@
 from dataclasses import dataclass, is_dataclass
-from typing import *
+from typing import Any
 from datetime import datetime
 from bs4 import BeautifulSoup
 
-from .error import *
+from .error import ScraperException
 
 
 def reprable(*attrs):
