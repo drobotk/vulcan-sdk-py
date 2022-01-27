@@ -1,0 +1,140 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>Logowanie do systemu Opolska e-Szkola</title>
+<meta chaset="UTF-8" />
+<meta name="description" content="Logowanie do systemu Opolska eSzkoła" />
+<meta name="author" content="RZPWE Opole" />
+<meta name="keywords" content="Opolska eSzkola, Opole, dzienniki elektroniczne " />
+<style type="text/css">
+    html
+    {
+        overflow: auto;
+        /*height: 100%;*/
+    }
+    body
+    {
+        background: url('/adfs/ls/Resources/gradient-u-gory-1-piks.png') repeat-x right top; 
+        height: 100%;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        font-family : Verdana;
+        color : #384460;
+    }
+    .mainDiv
+    {
+        background: url('/adfs/ls/Resources/opole/tlo-plansza-1.jpg');
+        width: 841px; 
+        height: 546px; 
+        margin: 0 auto;
+        margin-top: 70px;
+    }
+    #tableUserCredentials
+    {
+        position: relative;
+        top: 180px; 
+        left: 370px;
+        width: 420px
+    }
+</style>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-51899303-4', 'auto');
+  ga('send', 'pageview');
+</script>
+
+</head>
+
+<body>
+    <form name="form1" method="post" action="/adfs/ls/?wa=wsignin1.0&amp;wtrealm=https%3a%2f%2fcufs.eszkola.opolskie.pl%3a443%2fDefault%2fAccount%2fLogOn&amp;wctx=rm%3d0%26id%3deSzkola%26ru%3d%252f&amp;wct=2022-01-27T20%3a32%3a47Z" id="form1" style="height: 100%;">
+<div>
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwULLTEyODUzMDg3OTFkGAEFHl9fQ29udHJvbHNSZXF1aXJlUG9zdEJhY2tLZXlfXxYBBQxTdWJtaXRCdXR0b27WGFDKE18TTN4TASTOgwOW/EugSA==" />
+</div>
+
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="0EE29E36" />
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="/wEWBQK/15XxDQLnmcnFAQLQyNvdDgLC9/ChAwKyuOLUC81LPQAqbcXjjZee2mj5afWzhaUe" />
+</div><input type="hidden" name="__db" value="15" />
+	<div class="mainDiv">
+  <div id="programy" style="position:absolute; margin-top:100px; margin-left:10px; border:0px solid #000; width:330px;"><center>
+  Kliknij a nastepnie zaloguj sie...<br/>
+  <a href="http://poczta.eszkola.opolskie.pl/" alt="Poczta elektroniczna"><img src="https://dziennik.eszkola.opolskie.pl/238px-Outlook.com_icon.svg.png" style="height:30%; width:30%; margin:10px;" /></a>
+  <a href="https://teams.microsoft.com/" alt="Teams - praca grupowa"><img src="https://dziennik.eszkola.opolskie.pl/teams.png" style="height:30%; width:30%; margin:10px;" /></a>
+  
+  <p style="margin-top:70px;"> </p>
+  <div style="background-color:white; padding:5px;"><p>Zalecane wejscie do dziennika:<br /><a href="https://dziennik.eszkola.opolskie.pl">https://dziennik.eszkola.opolskie.pl</a>/</p>
+    <a href="https://rcre.opolskie.pl/2020/03/20/nauczyciele-i-uczniowie-opolskiej-eszkoly/">Twoje konto email Opolskiej eSzkoly</a><br />    
+    <a href="https://kb.rzpwe.opolskie.pl/kb/ustalenie-zmiana-hasla-dostepowego-do-opolskiej-e-szkoly/">Instrukcja odzyskiwania dostępu</a>
+  </div>
+  </center>
+  </div>
+
+	<div class="komunikaty" style="z-index:10;position:relative; z-index:10; border: 0px solid #000;  margin-left:336px; margin-top: 00px;  width:500px; height:0px">
+	   <iframe src="https://dziennik.eszkola.opolskie.pl/komunikaty.php" style="border:0px solid #000;" border="0" width="100%" height="80px"></iframe></div>
+	<div >
+
+		<table class="UsernamePasswordTable" id="tableUserCredentials" cellpadding="5" cellspacing="5">
+            <tr>
+                <td colspan="2">
+                    Wpisz nazwę użytkownika i hasło
+                </td>
+            </tr>
+			<tr>
+				<td align="right" nowrap="nowrap">
+					Nazwa uzytkownika:
+				</td>
+				<td width="100%">
+					<input name="UsernameTextBox" type="text" id="UsernameTextBox" style="width:100%;" />            
+				</td>
+			</tr>
+			<tr>
+				<td align="right">
+					Hasło:
+				</td>
+				<td>
+					<input name="PasswordTextBox" type="password" id="PasswordTextBox" style="width:100%;" />            
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2" align="right">
+					 <a id="aUnlock" title="Pierwsze logowanie lub odzyskiwanie hasła." href="https://konta.eszkola.opolskie.pl/maintenance/unlock.aspx">Przywracanie dostępu do konta</a> 
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2">
+					
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2" align="right">
+                    <input type="image" name="SubmitButton" id="SubmitButton" src="/adfs/ls/Resources/g-zaloguj-1.png" style="border-width:0px;" />
+				</td>
+			</tr>
+		</table>
+	</div>
+	</div>
+	</form>
+  <div style="margin: 0px auto; width: 841px; position: relative;">
+    <table width="100%" align="center" style="text-align: center; font-family: Calibri;" border="0" frame="void"><tbody><tr>
+    <tr><td align="center">
+      <table width="100%" bgcolor="#dedede"><tbody><tr><td  align="center">
+      Instrukcja logowania: <a href="https://dziennik.eszkola.opolskie.pl/instr_poczta" target="_blank">Poczta</a> &nbsp;<a href="https://dziennik.eszkola.opolskie.pl/instr_teams" target="_blank">Teams</a> 
+      </td><td align="center"><img src="/adfs/ls/Resources/eszkola_strzalka.png" style="height:20px; width:50px;" />
+      <a href="https://kb.rzpwe.opolskie.pl/kb/ustalenie-zmiana-hasla-dostepowego-do-opolskiej-e-szkoly/" target="_blank">Odzyskiwanie dostępu</a>
+      </td><td align="center">
+      <a href="http://poczta.eszkola.opolskie.pl/" target="_blank">Poczta elektroniczna</a>
+      </td></tr></tbody></table>
+    </tr></tbody></table>
+  </div>
+
+</body>
+</html>
