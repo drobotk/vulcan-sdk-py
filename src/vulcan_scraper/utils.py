@@ -191,3 +191,8 @@ def check_for_vulcan_error(text: str):
         tag = soup.select("div:not([class])")[0]
         own = tag_own_textcontent(tag)
         raise InvalidSymbolException(own)
+
+
+def reverse_teacher_name(name: str) -> str:
+    i = name.rindex(" ")
+    return name[i + 1 :] + " " + name[:i]

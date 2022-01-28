@@ -4,7 +4,13 @@ from datetime import datetime, time
 from bs4 import BeautifulSoup, element
 
 from .model import TimetableResponse
-from .utils import tag_own_textcontent, sub_after, sub_before, get_first
+from .utils import (
+    tag_own_textcontent,
+    sub_after,
+    sub_before,
+    get_first,
+    reverse_teacher_name,
+)
 
 
 @dataclass
@@ -53,11 +59,6 @@ OLDFORMAT_CLASS_COMMENT: str = "x-treelabel-rlz"
 re_substitute_teacher = re.compile(r"\(zastępstwo: (.+?)\)")
 re_moved_to = re.compile(r"\(przeniesiona na lekcję (\d+), ([0-9\.]+?)\)")
 re_oldformat_changes = re.compile(r"\(zastępstwo: (.+?), sala (.+?)\)")
-
-
-def reverse_teacher_name(name: str) -> str:
-    i = name.rindex(" ")
-    return name[i + 1 :] + " " + name[:i]
 
 
 def parse_lesson_comment(lesson: TimetableLesson, comment: str) -> str:

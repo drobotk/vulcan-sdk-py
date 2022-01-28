@@ -15,6 +15,7 @@ from .model import (
     NotesAndAchievementsData,
     TimetableResponse,
     Meeting,
+    ExamsResponse,
 )
 from .utils import check_for_vulcan_error
 
@@ -227,3 +228,27 @@ class HTTP:
             data={"data": date.strftime("%Y-%m-%dT00:00:00")},
         )
         return TimetableResponse(**data)
+
+    async def uczen_get_exams(
+        self,
+        symbol: str,
+        instance: str,
+        headers: dict[str, str],
+        cookies: dict[str, str],
+        date: datetime,
+        year: int,
+    ) -> ExamsResponse:
+        url = self.build_url(
+            subd="uonetplus-uczen",
+            path=paths.UCZEN.SPRAWDZIANY_GET,
+            symbol=symbol,
+            instance=instance,
+        )
+        data = await self.api_request(
+            "POST",
+            url,
+            headers=headers,
+            cookies=cookies,
+            data={"data": date.strftime("%Y-%m-%dT00:00:00"), "rokSzkolny": year},
+        )
+        return ExamsResponse(data)

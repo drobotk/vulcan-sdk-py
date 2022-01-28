@@ -249,7 +249,6 @@ class TimetableAdditional:
 
 class TimetableResponse:
     def __init__(self, **data):
-        # self.date: datetime = datetime.fromisoformat(data["Data"])
         self.date: str = data["Data"]
         self.headers: list[TimetableHeader] = [
             TimetableHeader(**d) for d in data["Headers"]
@@ -257,4 +256,30 @@ class TimetableResponse:
         self.rows: list[list[str]] = data["Rows"]
         self.additionals: list[TimetableAdditional] = [
             TimetableAdditional(**d) for d in data["Additionals"]
+        ]
+
+
+@reprable("date", "subject", "type", "description")
+class Exam:
+    date: datetime
+    type: str
+
+    def __init__(self, **data):
+        self.entry_date: datetime = datetime.fromisoformat(data["DataModyfikacji"])
+        self.subject: str = data["Nazwa"]
+        self.type = data["Rodzaj"]
+        self.teacher: str = data["Pracownik"]
+        self.description: str = data["Opis"]
+
+
+class ExamsDay:
+    def __init__(self, **data):
+        self.date: datetime = datetime.fromisoformat(data["Data"])
+        self.exams: list[Exam] = [Exam(**d) for d in data["Sprawdziany"]]
+
+
+class ExamsResponse:
+    def __init__(self, data):
+        self.days = [
+            ExamsDay(**d) for x in data for d in x["SprawdzianyGroupedByDayList"]
         ]

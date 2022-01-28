@@ -8,9 +8,11 @@ from .model import (
     GradesData,
     NotesAndAchievementsData,
     Meeting,
+    Exam,
 )
 from .http import HTTP
 from .timetable import Timetable
+from .utils import sub_before, reverse_teacher_name
 
 
 @reprable("first_name", "last_name", "class_symbol", "year", "school_name")
@@ -95,3 +97,29 @@ class Student:
         )
 
         return Timetable(data)
+
+    async def get_exams(self, week_day: datetime) -> list[Exam]:
+        """
+        Get the student's exams for the next 4 weeks starting from the week `week_day` is in.
+        """
+        monday = week_day - timedelta(days=week_day.weekday())
+        data = await self._http.uczen_get_exams(
+            self._symbol,
+            self._instance,
+            self._headers,
+            self._cookies,
+            monday,
+            self.year,
+        )
+
+        type_to_name = {1: "Sprawdzian", 2: "Kartkówka", 3: "Praca Klasowa"}
+
+        exams = []
+        for day in data.days:
+            for exam in day.exams:
+                exam.date = day.date
+                exam.teacher = reverse_teacher_name(sub_before(exam.teacher, " ["))
+                exam.type = type_to_name[exam.type]
+                exams.append(exam)
+
+        return exams
