@@ -1,5 +1,6 @@
 import asyncio
 from vulcan_scraper import VulcanWeb
+from datetime import datetime
 
 
 async def main():
@@ -17,6 +18,7 @@ async def main():
         # get all students from all schools available on this account
         students = await vulcan.get_students()
 
+        print("\t--- Students on this account ---")
         for student in students:
             print(student)
 
@@ -26,7 +28,7 @@ async def main():
         # fetching grades of a student for a given period index
         data = await student.get_grades(period=0)
 
-        print("\t--- Grades ---")
+        print("\n\t--- Grades ---")
         for subject in data.subjects:
             grades = "  ".join([g.entry for g in subject.grades])
             if grades:
@@ -35,7 +37,7 @@ async def main():
         # fetching notes and achievements of a student
         data = await student.get_notes_and_achievements()
 
-        print("\t--- Notes ---")
+        print("\n\t--- Notes ---")
         for note in data.notes:
             entry = (
                 "+"
@@ -46,14 +48,19 @@ async def main():
             )
             print(f"{entry} {note.category}: {note.content}")
 
-        print("\t--- Achievements ---")
+        print("\n\t--- Achievements ---")
         for achievement in data.achievements:
             print(f"# {achievement}")
 
-        print("\t--- Meetings ---")
+        print("\n\t--- Meetings ---")
         meetings = await student.get_meetings()
         for m in meetings:
             print(f"# {m.date} | {m.title} | {m.topic}")
+
+        print("\n\t--- Exams ---")
+        exams = await student.get_exams(datetime.now())
+        for e in exams:
+            print(f"# {e.date} | {e.type}: {e.subject} - {e.description}")
 
 
 if __name__ == "__main__":
