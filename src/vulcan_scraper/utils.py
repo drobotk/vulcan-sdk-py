@@ -4,6 +4,7 @@ from operator import attrgetter
 from time import perf_counter
 from typing import TypeVar, Iterable, Any, Optional
 from bs4 import BeautifulSoup, element
+from datetime import datetime, timedelta
 
 from .enum import LoginType
 from .error import (
@@ -191,6 +192,10 @@ def check_for_vulcan_error(text: str):
         tag = soup.select("div:not([class])")[0]
         own = tag_own_textcontent(tag)
         raise InvalidSymbolException(own)
+
+
+def get_monday(date: datetime) -> datetime:
+    return date - timedelta(days=date.weekday())
 
 
 def reverse_teacher_name(name: str) -> str:

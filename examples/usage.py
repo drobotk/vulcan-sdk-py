@@ -62,6 +62,11 @@ async def main():
         for e in exams:
             print(f"# {e.date.date()} | {e.type}: {e.subject} - {e.description}")
 
+        print("\n\t--- Homework ---")
+        homework = await student.get_homework(datetime.now())
+        for h in homework:
+            print(f"# {h.date.date()} | {h.subject} - {h.description}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

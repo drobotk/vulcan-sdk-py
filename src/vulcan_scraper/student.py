@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from .model import (
@@ -9,10 +9,11 @@ from .model import (
     NotesAndAchievementsData,
     Meeting,
     Exam,
+    Homework,
 )
 from .http import HTTP
 from .timetable import Timetable
-from .utils import sub_before, reverse_teacher_name
+from .utils import sub_before, reverse_teacher_name, get_monday
 
 
 @reprable("first_name", "last_name", "class_symbol", "year", "school_name")
@@ -91,9 +92,12 @@ class Student:
 
         You can use `datetime.now()` to get current week's timetable
         """
-        monday = week_day - timedelta(days=week_day.weekday())
         data = await self._http.uczen_get_timetable(
-            self._symbol, self._instance, self._headers, self._cookies, monday
+            self._symbol,
+            self._instance,
+            self._headers,
+            self._cookies,
+            get_monday(week_day),
         )
 
         return Timetable(data)
@@ -102,13 +106,12 @@ class Student:
         """
         Get the student's exams for the next 4 weeks starting from the week `week_day` is in.
         """
-        monday = week_day - timedelta(days=week_day.weekday())
         data = await self._http.uczen_get_exams(
             self._symbol,
             self._instance,
             self._headers,
             self._cookies,
-            monday,
+            get_monday(week_day),
             self.year,
         )
 
@@ -123,3 +126,24 @@ class Student:
                 exams.append(exam)
 
         return exams
+
+    async def get_homework(self, week_day: datetime) -> list[Homework]:
+        """
+        Get the student's homework for the week `week_day` is in.
+        """
+        data = await self._http.uczen_get_homework(
+            self._symbol,
+            self._instance,
+            self._headers,
+            self._cookies,
+            get_monday(week_day),
+            self.year,
+        )
+
+        homework = []
+        for day in data.days:
+            for h in day.homework:
+                h.teacher = reverse_teacher_name(sub_before(h.teacher, " ["))
+                homework.append(h)
+
+        return homework

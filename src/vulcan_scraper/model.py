@@ -283,3 +283,37 @@ class ExamsResponse:
         self.days = [
             ExamsDay(**d) for x in data for d in x["SprawdzianyGroupedByDayList"]
         ]
+
+
+class HomeworkAttachment:
+    def __init__(self, **data):
+        self.homework_id: int = data["IdZadanieDomowe"]
+        self.url: str = data["Url"]
+        self.filename: str = data["NazwaPliku"]
+        self.html: str = data["HtmlTag"]
+        self.onedrive_id: str = data["IdOneDrive"]
+
+
+@reprable("date", "subject", "description")
+class Homework:
+    def __init__(self, **data):
+        self.id: int = data["HomeworkId"]
+        self.entry_date: datetime = datetime.fromisoformat(data["ModificationDate"])
+        self.date: datetime = datetime.fromisoformat(data["Date"])
+        self.subject: str = data["Subject"]
+        self.description: str = data["Description"]
+        self.teacher: str = data["Teacher"]
+        self.attachments: list[HomeworkAttachment] = [
+            HomeworkAttachment(**d) for d in data["Attachments"]
+        ]
+
+
+class HomeworkDay:
+    def __init__(self, **data):
+        self.date: datetime = datetime.fromisoformat(data["Date"])
+        self.homework: list[Homework] = [Homework(**d) for d in data["Homework"]]
+
+
+class HomeworkResponse:
+    def __init__(self, data):
+        self.days = [HomeworkDay(**d) for d in data]

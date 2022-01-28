@@ -16,6 +16,7 @@ from .model import (
     TimetableResponse,
     Meeting,
     ExamsResponse,
+    HomeworkResponse,
 )
 from .utils import check_for_vulcan_error
 
@@ -252,3 +253,27 @@ class HTTP:
             data={"data": date.strftime("%Y-%m-%dT00:00:00"), "rokSzkolny": year},
         )
         return ExamsResponse(data)
+
+    async def uczen_get_homework(
+        self,
+        symbol: str,
+        instance: str,
+        headers: dict[str, str],
+        cookies: dict[str, str],
+        date: datetime,
+        year: int,
+    ) -> HomeworkResponse:
+        url = self.build_url(
+            subd="uonetplus-uczen",
+            path=paths.UCZEN.HOMEWORK_GET,
+            symbol=symbol,
+            instance=instance,
+        )
+        data = await self.api_request(
+            "POST",
+            url,
+            headers=headers,
+            cookies=cookies,
+            data={"date": date.strftime("%Y-%m-%dT00:00:00"), "schoolYear": year},
+        )
+        return HomeworkResponse(data)

@@ -25,3 +25,4 @@ class UCZEN:
     ZEBRANIA_GET: str = "/{SYMBOL}/{INSTANCE}/Zebrania.mvc/Get"
     PLANZAJEC_GET: str = "/{SYMBOL}/{INSTANCE}/PlanZajec.mvc/Get"
     SPRAWDZIANY_GET: str = "/{SYMBOL}/{INSTANCE}/Sprawdziany.mvc/Get"
+    HOMEWORK_GET: str = "/{SYMBOL}/{INSTANCE}/Homework.mvc/Get"
