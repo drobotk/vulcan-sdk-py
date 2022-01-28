@@ -60,7 +60,7 @@ async def main():
         print("\n\t--- Exams ---")
         exams = await student.get_exams(datetime.now())
         for e in exams:
-            print(f"# {e.date} | {e.type}: {e.subject} - {e.description}")
+            print(f"# {e.date.date()} | {e.type}: {e.subject} - {e.description}")
 
 
 if __name__ == "__main__":
