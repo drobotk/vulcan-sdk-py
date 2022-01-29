@@ -112,15 +112,20 @@ def parse_lesson_info(
     lesson.room = roomspan.text.strip()
     lesson.teacher = teacherspan.text.strip()
 
+    if re.search(
+        r"\d", lesson.teacher
+    ):  # HACK: if teacher contains a number, assume its actually the room and flip
+        lesson.room, lesson.teacher = lesson.teacher, lesson.room
+
     if CLASS_CANCELLED in namespan["class"]:
         lesson.cancelled = True
-    if CLASS_CHANGED in namespan["class"]:
-        lesson.changed = True
-
-    # i wonder if this will ever fail:
-    assert lesson.cancelled is False or lesson.changed is False
+    # if CLASS_CHANGED in namespan["class"]:
+    #     lesson.changed = True
 
     lesson.comment = parse_lesson_comment(lesson, divtext)
+
+    # i wonder if this will ever fail:
+    # assert lesson.cancelled is False or lesson.changed is False
 
 
 def parse_div(lesson: TimetableLesson, divtext: str, spans: list[element.Tag]):
@@ -194,11 +199,13 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
         new = divs[1]
         old_s = old.select("span")
         new_s = new.select("span")
-        if len(old_s) < 3 or len(new_s) < 3:
+        if len(old_s) < 2 or len(new_s) < 2:
             lesson.subject = f"TODO: {len(old_s) = }, {len(new_s) = }"
             return lesson
 
-        if CLASS_CANCELLED in new_s[0]["class"]:  # invert
+        if (
+            CLASS_CANCELLED in new_s[0]["class"] or "(przeniesiona z lekcji" in old.text
+        ):  # invert
             old, new = new, old
             old_s, new_s = new_s, old_s
 
