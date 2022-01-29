@@ -196,7 +196,7 @@ def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
         new_s = new.select("span")
         if len(old_s) < 3 or len(new_s) < 3:
             lesson.subject = f"TODO: {len(old_s) = }, {len(new_s) = }"
-            return
+            return lesson
 
         if CLASS_CANCELLED in new_s[0]["class"]:  # invert
             old, new = new, old

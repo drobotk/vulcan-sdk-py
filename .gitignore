@@ -148,4 +148,5 @@ cython_debug/
 
 ./test*.py
 *.code-workspace
+.vscode/
 src/tests/bruh.py
