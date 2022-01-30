@@ -5,7 +5,8 @@ from datetime import datetime
 
 async def main():
     vulcan = VulcanWeb(
-        host="fakelog.cf",  # Vulcan e-register host name, eg. "fakelog.cf", "vulcan.net.pl"
+        host="fakelog.tk",  # Vulcan e-register host name, eg. "fakelog.cf", "vulcan.net.pl"
+        ssl=False,  # Whether or not to use https
         email="jan@fakelog.cf",
         password="jan123",
         # Optional - scraper will attempt to extract symbols from CUFS certificate
@@ -24,6 +25,10 @@ async def main():
 
         # use the first student; this will usually be the current year student
         student = students[0]
+
+        print("\n\t--- Lucky Number ---")
+        number = await student.get_lucky_number()
+        print(number)
 
         # fetching grades of a student for a given period index
         data = await student.get_grades(period=0)

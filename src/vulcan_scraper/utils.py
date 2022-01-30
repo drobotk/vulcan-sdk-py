@@ -36,14 +36,24 @@ def extract_symbols(wresult: str) -> list[str]:
         return symbols
 
 
-def extract_instances(text: str) -> list[str]:
+@dataclass
+class Instance:
+    id: str
+    name: str
+
+
+def extract_instances(text: str) -> list[Instance]:
+    ret = []
     try:
         soup = BeautifulSoup(text, "lxml")
         tags = soup.select(
             '.panel.linkownia.pracownik.klient a[href*="uonetplus-uczen"]'
         )
-        links = [a["href"] for a in tags]
-        instances = [l.split("/")[4] for l in links]
+        for a in tags:
+            id = a["href"].split("/")[4]
+            name = a.text.strip()
+            name = name if "Uczeń" not in name else ""
+            ret.append(Instance(id=id, name=name))
 
     except Exception as e:
         raise ScraperException(
@@ -51,7 +61,7 @@ def extract_instances(text: str) -> list[str]:
         )
 
     else:
-        return instances
+        return ret
 
 
 def get_script_param(text: str, param: str, default: str = None) -> str:

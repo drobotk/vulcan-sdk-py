@@ -1,4 +1,4 @@
-from vulcan_scraper.utils import extract_instances
+from vulcan_scraper.utils import extract_instances, Instance
 
 
 def test_extract_instances():
@@ -7,4 +7,8 @@ def test_extract_instances():
 
     instances = extract_instances(text)
 
-    assert instances == ["123456", "123457", "123458"]
+    assert instances == [
+        Instance(id="123456", name="SZK1"),
+        Instance(id="123457", name="SZK2"),
+        Instance(id="123458", name=""),
+    ]

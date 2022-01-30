@@ -14,6 +14,7 @@ from .http import HTTP
 from .student import Student
 from .model import CertificateResponse, ReportingUnit
 from .enum import LoginType
+from .uonetplus import Uonetplus
 from . import utils
 
 if (
@@ -47,10 +48,7 @@ class VulcanWeb:
 
         self.http = HTTP(host, ssl)
 
-        self._uonetplus_text = ""
-        self._uonetplus_permissions = ""
-        self._instances: list[str] = []
-        self._instance = ""
+        self.uonetplus = Uonetplus(self)
 
         self._cufs_logged_in = False
         self.logged_in = False
@@ -80,7 +78,7 @@ class VulcanWeb:
         for s in symbols:
             if await self._login_uonetplus(s, cres):
                 self.logged_in = True
-                self.symbol = s
+                self.symbol = self.uonetplus.symbol
                 break
 
         if not self.logged_in:
@@ -143,8 +141,9 @@ class VulcanWeb:
 
         assert "VParam" in text
 
-        self._uonetplus_text = text
-        self._uonetplus_permissions = utils.get_script_param(text, "permissions")
+        self.uonetplus.symbol = symbol
+        self.uonetplus.text = text
+        self.uonetplus.permissions = utils.get_script_param(text, "permissions")
 
         return True
 
@@ -154,16 +153,10 @@ class VulcanWeb:
         if not self.logged_in:
             raise NotLoggedInException
 
-        assert self._uonetplus_text
+        assert self.uonetplus.text
 
-        instances = utils.extract_instances(self._uonetplus_text)
-        try:  # 05.01.2021 - endpoint failing constantly
-            units = await self.http.uzytkownik_get_reporting_units(self.symbol)
-        except VulcanException:
-            self._log.warn(
-                "Failed to fetch reporting units. Some student data might be unavailable"
-            )
-            units = []
+        instances = utils.extract_instances(self.uonetplus.text)
+        units = await self.http.uzytkownik_get_reporting_units(self.symbol)
 
         students = await asyncio.gather(
             *[
@@ -177,11 +170,11 @@ class VulcanWeb:
         return self.students
 
     async def _get_students_for_instance(
-        self, instance: str, units: list[ReportingUnit]
+        self, instance: utils.Instance, units: list[ReportingUnit]
     ) -> list[Student]:
         students = []
 
-        text = await self.http.uczen_start(self.symbol, instance)
+        text = await self.http.uczen_start(self.symbol, instance.id)
         if "VParam" not in text:
             raise ScraperException("VParam not found on uczen start page")
 
@@ -196,7 +189,9 @@ class VulcanWeb:
             "X-V-RequestVerificationToken": aft,
         }
 
-        registers = await self.http.uczen_get_registers(self.symbol, instance, headers)
+        registers = await self.http.uczen_get_registers(
+            self.symbol, instance.id, headers
+        )
         for register in registers:
             unit = (
                 utils.get_first(units, id=register.periods[0].unit_id)

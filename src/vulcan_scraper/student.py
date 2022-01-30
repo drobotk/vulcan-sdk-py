@@ -12,8 +12,9 @@ from .model import (
     Homework,
 )
 from .http import HTTP
+from .uonetplus import Uonetplus
 from .timetable import Timetable
-from .utils import sub_before, reverse_teacher_name, get_monday
+from .utils import sub_before, reverse_teacher_name, get_monday, Instance, get_first
 
 
 @reprable("first_name", "last_name", "class_symbol", "year", "school_name")
@@ -21,7 +22,7 @@ class Student:
     def __init__(
         self,
         vulcan,
-        instance: str,
+        instance: Instance,
         headers: dict[str, str],
         school_name: str,
         reg: StudentRegister,
@@ -29,6 +30,7 @@ class Student:
     ):
         self._v = vulcan
         self._http: HTTP = vulcan.http
+        self._uonetplus: Uonetplus = vulcan.uonetplus
         self._symbol = vulcan.symbol
         self._instance = instance
         self._headers = headers
@@ -63,7 +65,7 @@ class Student:
         period_id = self.register.periods[period].id
         return await self._http.uczen_get_grades(
             self._symbol,
-            self._instance,
+            self._instance.id,
             self._headers,
             self._cookies,
             period_id=period_id,
@@ -72,7 +74,7 @@ class Student:
     async def get_notes_and_achievements(self) -> NotesAndAchievementsData:
         return await self._http.uczen_get_notes_achievements(
             self._symbol,
-            self._instance,
+            self._instance.id,
             self._headers,
             self._cookies,
         )
@@ -80,7 +82,7 @@ class Student:
     async def get_meetings(self) -> list[Meeting]:
         meetings = await self._http.uczen_get_meetings(
             self._symbol,
-            self._instance,
+            self._instance.id,
             self._headers,
             self._cookies,
         )
@@ -94,7 +96,7 @@ class Student:
         """
         data = await self._http.uczen_get_timetable(
             self._symbol,
-            self._instance,
+            self._instance.id,
             self._headers,
             self._cookies,
             get_monday(week_day),
@@ -108,7 +110,7 @@ class Student:
         """
         data = await self._http.uczen_get_exams(
             self._symbol,
-            self._instance,
+            self._instance.id,
             self._headers,
             self._cookies,
             get_monday(week_day),
@@ -133,7 +135,7 @@ class Student:
         """
         data = await self._http.uczen_get_homework(
             self._symbol,
-            self._instance,
+            self._instance.id,
             self._headers,
             self._cookies,
             get_monday(week_day),
@@ -147,3 +149,12 @@ class Student:
                 homework.append(h)
 
         return homework
+
+    async def get_lucky_number(self) -> Optional[int]:
+        numbers = await self._uonetplus.get_lucky_numbers()
+        if not numbers:
+            return
+
+        num = get_first(numbers, instance_name=self._instance.name) or numbers[0]
+
+        return num.value

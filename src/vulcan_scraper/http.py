@@ -17,6 +17,7 @@ from .model import (
     Meeting,
     ExamsResponse,
     HomeworkResponse,
+    UonetplusTileResponse,
 )
 from .utils import check_for_vulcan_error
 
@@ -126,12 +127,12 @@ class HTTP:
         url = self.build_url(subd="cufs", path=paths.CUFS.LOGOUT, symbol=symbol)
         return (await self.request("GET", url))[0]
 
-    async def uczen_start(self, symbol: str, instance: str) -> str:
+    async def uczen_start(self, symbol: str, schoolid: str) -> str:
         url = self.build_url(
             subd="uonetplus-uczen",
             path=paths.UCZEN.START,
             symbol=symbol,
-            instance=instance,
+            schoolid=schoolid,
         )
         return (await self.request("GET", url))[0]
 
@@ -145,13 +146,13 @@ class HTTP:
         return [ReportingUnit(**x) for x in data]
 
     async def uczen_get_registers(
-        self, symbol: str, instance: str, headers: dict[str, str]
+        self, symbol: str, schoolid: str, headers: dict[str, str]
     ) -> list[StudentRegister]:
         url = self.build_url(
             subd="uonetplus-uczen",
             path=paths.UCZEN.UCZENDZIENNIK_GET,
             symbol=symbol,
-            instance=instance,
+            schoolid=schoolid,
         )
         data = await self.api_request("POST", url, headers=headers)
         return [StudentRegister(**x) for x in data]
@@ -159,7 +160,7 @@ class HTTP:
     async def uczen_get_grades(
         self,
         symbol: str,
-        instance: str,
+        schoolid: str,
         headers: dict[str, str],
         cookies: dict[str, str],
         period_id: int,
@@ -168,7 +169,7 @@ class HTTP:
             subd="uonetplus-uczen",
             path=paths.UCZEN.OCENY_GET,
             symbol=symbol,
-            instance=instance,
+            schoolid=schoolid,
         )
         data = await self.api_request(
             "POST", url, headers=headers, cookies=cookies, json={"okres": period_id}
@@ -178,7 +179,7 @@ class HTTP:
     async def uczen_get_notes_achievements(
         self,
         symbol: str,
-        instance: str,
+        schoolid: str,
         headers: dict[str, str],
         cookies: dict[str, str],
     ) -> NotesAndAchievementsData:
@@ -186,7 +187,7 @@ class HTTP:
             subd="uonetplus-uczen",
             path=paths.UCZEN.UWAGIIOSIAGNIECIA_GET,
             symbol=symbol,
-            instance=instance,
+            schoolid=schoolid,
         )
         data = await self.api_request("POST", url, headers=headers, cookies=cookies)
         return NotesAndAchievementsData(**data)
@@ -194,7 +195,7 @@ class HTTP:
     async def uczen_get_meetings(
         self,
         symbol: str,
-        instance: str,
+        schoolid: str,
         headers: dict[str, str],
         cookies: dict[str, str],
     ) -> list[Meeting]:
@@ -202,7 +203,7 @@ class HTTP:
             subd="uonetplus-uczen",
             path=paths.UCZEN.ZEBRANIA_GET,
             symbol=symbol,
-            instance=instance,
+            schoolid=schoolid,
         )
         data = await self.api_request("POST", url, headers=headers, cookies=cookies)
         return [Meeting(**x) for x in data]
@@ -210,7 +211,7 @@ class HTTP:
     async def uczen_get_timetable(
         self,
         symbol: str,
-        instance: str,
+        schoolid: str,
         headers: dict[str, str],
         cookies: dict[str, str],
         date: datetime,
@@ -219,7 +220,7 @@ class HTTP:
             subd="uonetplus-uczen",
             path=paths.UCZEN.PLANZAJEC_GET,
             symbol=symbol,
-            instance=instance,
+            schoolid=schoolid,
         )
         data = await self.api_request(
             "POST",
@@ -233,7 +234,7 @@ class HTTP:
     async def uczen_get_exams(
         self,
         symbol: str,
-        instance: str,
+        schoolid: str,
         headers: dict[str, str],
         cookies: dict[str, str],
         date: datetime,
@@ -243,7 +244,7 @@ class HTTP:
             subd="uonetplus-uczen",
             path=paths.UCZEN.SPRAWDZIANY_GET,
             symbol=symbol,
-            instance=instance,
+            schoolid=schoolid,
         )
         data = await self.api_request(
             "POST",
@@ -257,7 +258,7 @@ class HTTP:
     async def uczen_get_homework(
         self,
         symbol: str,
-        instance: str,
+        schoolid: str,
         headers: dict[str, str],
         cookies: dict[str, str],
         date: datetime,
@@ -267,7 +268,7 @@ class HTTP:
             subd="uonetplus-uczen",
             path=paths.UCZEN.HOMEWORK_GET,
             symbol=symbol,
-            instance=instance,
+            schoolid=schoolid,
         )
         data = await self.api_request(
             "POST",
@@ -277,3 +278,14 @@ class HTTP:
             data={"date": date.strftime("%Y-%m-%dT00:00:00"), "schoolYear": year},
         )
         return HomeworkResponse(data)
+
+    async def uonetplus_get_lucky_numbers(
+        self, symbol: str, permissions: str
+    ) -> list[UonetplusTileResponse]:
+        url = self.build_url(
+            subd="uonetplus",
+            path=paths.UONETPLUS.GETKIDSLUCKYNUMBERS,
+            symbol=symbol,
+        )
+        data = await self.api_request("POST", url, data={"permissions": permissions})
+        return [UonetplusTileResponse(**x) for x in data]

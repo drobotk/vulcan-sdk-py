@@ -5,6 +5,7 @@ class CUFS:
 
 class UONETPLUS:
     START: str = "/{SYMBOL}/LoginEndpoint.aspx"
+    GETKIDSLUCKYNUMBERS: str = "/{SYMBOL}/Start.mvc/GetKidsLuckyNumbers"
 
 
 class UZYTKOWNIK:
@@ -14,15 +15,15 @@ class UZYTKOWNIK:
 
 
 class UCZEN:
-    START: str = "/{SYMBOL}/{INSTANCE}/Start"
-    UCZENCACHE_GET: str = "/{SYMBOL}/{INSTANCE}/UczenCache.mvc/Get"
-    UCZENDZIENNIK_GET: str = "/{SYMBOL}/{INSTANCE}/UczenDziennik.mvc/Get"
-    OCENY_GET: str = "/{SYMBOL}/{INSTANCE}/Oceny.mvc/Get"
+    START: str = "/{SYMBOL}/{SCHOOLID}/Start"
+    UCZENCACHE_GET: str = "/{SYMBOL}/{SCHOOLID}/UczenCache.mvc/Get"
+    UCZENDZIENNIK_GET: str = "/{SYMBOL}/{SCHOOLID}/UczenDziennik.mvc/Get"
+    OCENY_GET: str = "/{SYMBOL}/{SCHOOLID}/Oceny.mvc/Get"
     STATYSTYKI_GETOCENYCZASTKOWE: str = (
-        "/{SYMBOL}/{INSTANCE}/Statystyki.mvc/GetOcenyCzastkowe"
+        "/{SYMBOL}/{SCHOOLID}/Statystyki.mvc/GetOcenyCzastkowe"
     )
-    UWAGIIOSIAGNIECIA_GET: str = "/{SYMBOL}/{INSTANCE}/UwagiIOsiagniecia.mvc/Get"
-    ZEBRANIA_GET: str = "/{SYMBOL}/{INSTANCE}/Zebrania.mvc/Get"
-    PLANZAJEC_GET: str = "/{SYMBOL}/{INSTANCE}/PlanZajec.mvc/Get"
-    SPRAWDZIANY_GET: str = "/{SYMBOL}/{INSTANCE}/Sprawdziany.mvc/Get"
-    HOMEWORK_GET: str = "/{SYMBOL}/{INSTANCE}/Homework.mvc/Get"
+    UWAGIIOSIAGNIECIA_GET: str = "/{SYMBOL}/{SCHOOLID}/UwagiIOsiagniecia.mvc/Get"
+    ZEBRANIA_GET: str = "/{SYMBOL}/{SCHOOLID}/Zebrania.mvc/Get"
+    PLANZAJEC_GET: str = "/{SYMBOL}/{SCHOOLID}/PlanZajec.mvc/Get"
+    SPRAWDZIANY_GET: str = "/{SYMBOL}/{SCHOOLID}/Sprawdziany.mvc/Get"
+    HOMEWORK_GET: str = "/{SYMBOL}/{SCHOOLID}/Homework.mvc/Get"

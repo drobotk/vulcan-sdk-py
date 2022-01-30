@@ -85,6 +85,7 @@ class ApiResponse:
     success: bool
     data: Any = None
     feedback: Feedback = None
+    errorMessage: Any = None
 
 
 @reprable("id", "abbreviation")
@@ -317,3 +318,24 @@ class HomeworkDay:
 class HomeworkResponse:
     def __init__(self, data):
         self.days = [HomeworkDay(**d) for d in data]
+
+
+@reprable("name", "content")
+class UonetplusTileResponse:
+    def __init__(self, **data):
+        self.icon_name: str = get_default(data, "IkonkaNazwa", "")
+        self.number: int = get_default(data, "Num", 0)
+        self.name: str = data["Nazwa"]
+        self.url: str = get_default(data, "Url", "")
+        self.data: str = get_default(data, "Dane", "")
+        self.symbol: str = get_default(data, "Symbol", "")
+        self.inactive: bool = data["Nieaktywny"]
+
+        self.content = [self.__class__(**d) for d in data["Zawartosc"]]
+
+
+@dataclass
+class LuckyNumber:
+    instance_name: str
+    school: str
+    value: int
