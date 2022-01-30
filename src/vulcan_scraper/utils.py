@@ -199,5 +199,8 @@ def get_monday(date: datetime) -> datetime:
 
 
 def reverse_teacher_name(name: str) -> str:
+    if " " not in name:
+        return name
+
     i = name.rindex(" ")
     return name[i + 1 :] + " " + name[:i]

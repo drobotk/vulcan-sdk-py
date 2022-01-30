@@ -58,44 +58,35 @@ OLDFORMAT_CLASS_COMMENT: str = "x-treelabel-rlz"
 
 re_substitute_teacher = re.compile(r"\(zastępstwo: (.+?)\)")
 re_moved_to = re.compile(r"\(przeniesiona na lekcję (\d+), ([0-9\.]+?)\)")
-re_oldformat_changes = re.compile(r"\(zastępstwo: (.+?), sala (.+?)\)")
+re_oldformat_changes = re.compile(r"\(zastępstwo: ([^)]+?), sala (.+?)\)")
 
 
 def parse_lesson_comment(lesson: TimetableLesson, comment: str) -> str:
+    teachers = set()
+    rooms = set()
     # old format
-    teachers = []
-    rooms = []
     for m in re_oldformat_changes.finditer(comment):
-        teachers.append(m.group(1))
-        rooms.append(m.group(2))
+        teachers.add(m.group(1))
+        rooms.add(m.group(2))
         comment = comment.replace(m.group(), "", 1)
 
-    if teachers and rooms:
-        teacher = ", ".join(teachers)
-        room = ", ".join(rooms)
-        if teacher != lesson.teacher:
-            lesson.new_teacher = teacher
-            lesson.changed = True
-
-        if room != lesson.room:
-            lesson.new_room = room
-            lesson.changed = True
-
     # current format
-    teachers = []
     for m in re_substitute_teacher.finditer(comment):
         name = reverse_teacher_name(m.group(1))
-        teachers.append(name)
+        teachers.add(name)
         comment = comment.replace(m.group(), "", 1)
 
     if teachers:
         teacher = ", ".join(teachers)
-        lesson.new_teacher = teacher
-        lesson.changed = True
+        if lesson.teacher != teacher:
+            lesson.new_teacher = teacher
+            lesson.changed = True
 
-        # vulcan bug: replaced teachers change to the substitute teachers after the lesson happens
-        if lesson.teacher == teacher:
-            lesson.teacher = ""
+    if rooms:
+        room = ", ".join(rooms)
+        if lesson.room != room:
+            lesson.new_room = room
+            lesson.changed = True
 
     return "; ".join(comment.removeprefix("(").removesuffix(")").split(")("))
 
@@ -123,9 +114,6 @@ def parse_lesson_info(
     #     lesson.changed = True
 
     lesson.comment = parse_lesson_comment(lesson, divtext)
-
-    # i wonder if this will ever fail:
-    # assert lesson.cancelled is False or lesson.changed is False
 
 
 def parse_div(lesson: TimetableLesson, divtext: str, spans: list[element.Tag]):
@@ -177,7 +165,7 @@ def parse_div(lesson: TimetableLesson, divtext: str, spans: list[element.Tag]):
 
 def parse_lesson(date: datetime, header: str, text: str) -> TimetableLesson:
     soup = BeautifulSoup(text, "lxml")
-    divs = soup.select("div")
+    divs = soup.select("div:not([class])")
     if not divs:
         return
 
