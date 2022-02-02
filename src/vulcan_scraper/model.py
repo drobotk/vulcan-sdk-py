@@ -337,5 +337,12 @@ class UonetplusTileResponse:
 @dataclass
 class LuckyNumber:
     instance_name: str
-    school: str
+    unit_abbr: str
     value: int
+
+
+@dataclass
+class SchoolAnnouncement:
+    date: datetime
+    subject: str
+    content: str

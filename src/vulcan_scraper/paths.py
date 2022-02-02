@@ -6,6 +6,9 @@ class CUFS:
 class UONETPLUS:
     START: str = "/{SYMBOL}/LoginEndpoint.aspx"
     GETKIDSLUCKYNUMBERS: str = "/{SYMBOL}/Start.mvc/GetKidsLuckyNumbers"
+    GETSTUDENTDIRECTORINFORMATIONS: str = (
+        "/{SYMBOL}/Start.mvc/GetStudentDirectorInformations"
+    )
 
 
 class UZYTKOWNIK:

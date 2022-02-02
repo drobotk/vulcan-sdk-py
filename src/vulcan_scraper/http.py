@@ -289,3 +289,14 @@ class HTTP:
         )
         data = await self.api_request("POST", url, data={"permissions": permissions})
         return [UonetplusTileResponse(**x) for x in data]
+
+    async def uonetplus_get_school_announcements(
+        self, symbol: str, permissions: str
+    ) -> list[UonetplusTileResponse]:
+        url = self.build_url(
+            subd="uonetplus",
+            path=paths.UONETPLUS.GETSTUDENTDIRECTORINFORMATIONS,
+            symbol=symbol,
+        )
+        data = await self.api_request("POST", url, data={"permissions": permissions})
+        return [UonetplusTileResponse(**x) for x in data]

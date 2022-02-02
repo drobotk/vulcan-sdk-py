@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from .model import (
+    SchoolAnnouncement,
     reprable,
     StudentRegister,
     ReportingUnit,
@@ -155,6 +156,14 @@ class Student:
         if not numbers:
             return
 
-        num = get_first(numbers, instance_name=self._instance.name) or numbers[0]
+        num = (
+            get_first(numbers, unit_abbr=self.school_abbreviation)
+            or get_first(numbers, instance_name=self._instance.name)
+            or numbers[0]
+        )
 
         return num.value
+
+    async def get_school_announcements(self) -> list[SchoolAnnouncement]:
+        # TODO: only return ones relevant to this student
+        return await self._uonetplus.get_school_announcements()
