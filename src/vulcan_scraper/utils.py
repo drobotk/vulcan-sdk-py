@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 
 from .enum import LoginType
 from .error import (
+    NotLoggedInException,
     ScraperException,
     VulcanException,
     BadCredentialsException,
@@ -171,6 +172,9 @@ def sub_after(a: str, b: str, c: str = None) -> str:
 
 # sdk/ErrorInterceptor.kt <3
 def check_for_vulcan_error(text: str):
+    if text == "The custom error module does not recognize this error.":
+        raise NotLoggedInException
+
     soup = BeautifulSoup(text, "lxml")
 
     s = soup.select(".errorBlock .errorTitle, .errorBlock .errorMessage")

@@ -8,7 +8,6 @@ from .error import (
     InvalidSymbolException,
     NotLoggedInException,
     NoValidSymbolException,
-    VulcanException,
 )
 from .http import HTTP
 from .student import Student
@@ -52,6 +51,7 @@ class VulcanWeb:
 
         self._cufs_logged_in = False
         self.logged_in = False
+        self._units: list[ReportingUnit] = []
         self.students: list[Student] = []
 
     async def login(self):
@@ -144,6 +144,9 @@ class VulcanWeb:
         self.uonetplus.symbol = symbol
         self.uonetplus.text = text
         self.uonetplus.permissions = utils.get_script_param(text, "permissions")
+        self.uonetplus.instances = utils.extract_instances(text)
+
+        self._units = await self.http.uzytkownik_get_reporting_units(symbol)
 
         return True
 
@@ -153,15 +156,12 @@ class VulcanWeb:
         if not self.logged_in:
             raise NotLoggedInException
 
-        assert self.uonetplus.text
-
-        instances = utils.extract_instances(self.uonetplus.text)
-        units = await self.http.uzytkownik_get_reporting_units(self.symbol)
+        assert self.uonetplus.instances, self._units
 
         students = await asyncio.gather(
             *[
-                self._get_students_for_instance(instance, units)
-                for instance in instances
+                self._get_students_for_instance(instance, self._units)
+                for instance in self.uonetplus.instances
             ]
         )
 
@@ -169,12 +169,8 @@ class VulcanWeb:
 
         return self.students
 
-    async def _get_students_for_instance(
-        self, instance: utils.Instance, units: list[ReportingUnit]
-    ) -> list[Student]:
-        students = []
-
-        text = await self.http.uczen_start(self.symbol, instance.id)
+    async def _get_uczen_start_data(self, instance_id: str) -> tuple[str, str]:
+        text = await self.http.uczen_start(self.symbol, instance_id)
         if "VParam" not in text:
             raise ScraperException("VParam not found on uczen start page")
 
@@ -188,6 +184,14 @@ class VulcanWeb:
             "X-V-AppVersion": v,
             "X-V-RequestVerificationToken": aft,
         }
+        return headers, school_name
+
+    async def _get_students_for_instance(
+        self, instance: utils.Instance, units: list[ReportingUnit]
+    ) -> list[Student]:
+        students = []
+
+        headers, school_name = await self._get_uczen_start_data(instance.id)
 
         registers = await self.http.uczen_get_registers(
             self.symbol, instance.id, headers
@@ -209,6 +213,15 @@ class VulcanWeb:
         info = utils.extract_login_info(text)
         info.url = url
         return info
+
+    async def refresh_session(self):
+        if not self.logged_in:
+            raise NotLoggedInException
+
+        if not self.students:
+            raise ScraperException("Unable to refresh session: no students in cache")
+
+        await self.students[0].refresh_session()
 
     async def logout(self):
         if self._cufs_logged_in:

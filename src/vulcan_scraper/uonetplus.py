@@ -1,7 +1,7 @@
 from .http import HTTP
 from .model import LuckyNumber, SchoolAnnouncement
 from .error import ScraperException
-from .utils import sub_after
+from .utils import sub_after, Instance
 from datetime import datetime
 from bs4 import BeautifulSoup
 
@@ -11,6 +11,7 @@ class Uonetplus:
     symbol: str
     text: str
     permissions: str
+    instances: list[Instance]
 
     def __init__(self, vulcan):
         self._v = vulcan

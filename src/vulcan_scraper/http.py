@@ -77,8 +77,8 @@ class HTTP:
 
             self._log.debug(f"{res.status} {res.method} {res.url}")
 
-            if not res.ok:
-                raise HTTPException(f"{verb} {url} got {res.status}")
+            # if not res.ok:
+            #     raise HTTPException(f"{verb} {url} got {res.status}")
 
             text = await res.text()
             if res.content_type.lower().split("/")[-1] != "json":
@@ -300,3 +300,14 @@ class HTTP:
         )
         data = await self.api_request("POST", url, data={"permissions": permissions})
         return [UonetplusTileResponse(**x) for x in data]
+
+    async def uczen_refresh_session(self, symbol: str, schoolid: str):
+        url = self.build_url(
+            subd="uonetplus-uczen",
+            path=paths.UCZEN.REFRESHSESSION,
+            symbol=symbol,
+            schoolid=schoolid,
+        )
+        await self.api_request(
+            "GET", url, params={"_dc": int(datetime.now().timestamp() * 1000)}
+        )

@@ -1,3 +1,9 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .client import VulcanWeb
+
 from datetime import datetime
 from typing import Optional
 
@@ -16,20 +22,21 @@ from .http import HTTP
 from .uonetplus import Uonetplus
 from .timetable import Timetable
 from .utils import sub_before, reverse_teacher_name, get_monday, Instance, get_first
+from .error import NotLoggedInException, ScraperException
 
 
 @reprable("first_name", "last_name", "class_symbol", "year", "school_name")
 class Student:
     def __init__(
         self,
-        vulcan,
+        vulcan: VulcanWeb,
         instance: Instance,
         headers: dict[str, str],
         school_name: str,
         reg: StudentRegister,
         unit: Optional[ReportingUnit] = None,
     ):
-        self._v = vulcan
+        self._v: VulcanWeb = vulcan
         self._http: HTTP = vulcan.http
         self._uonetplus: Uonetplus = vulcan.uonetplus
         self._symbol = vulcan.symbol
@@ -38,6 +45,7 @@ class Student:
 
         self.register = reg
         self.school_name = school_name
+        self.school_id = instance.id
 
         self.reporting_unit = unit
         self.school_abbreviation = unit.abbreviation if unit else ""
@@ -61,6 +69,33 @@ class Student:
 
     def __str__(self) -> str:
         return self.full_name_with_year
+
+    @classmethod
+    async def from_data(
+        cls, vulcan: VulcanWeb, *, school_id: str, register_id: int
+    ) -> Student:
+        if not vulcan.logged_in:
+            raise NotLoggedInException
+
+        assert vulcan.uonetplus.instances, vulcan._units
+
+        instance = get_first(vulcan.uonetplus.instances, id=school_id)
+        if not instance:
+            raise ScraperException("Student.from_data: Invalid school_id provided")
+
+        headers, school_name = await vulcan._get_uczen_start_data(instance.id)
+        registers = await vulcan.http.uczen_get_registers(
+            vulcan.symbol, instance.id, headers
+        )
+        register = get_first(registers, register_id=register_id)
+        if not register:
+            raise ScraperException(
+                "Student.from_data: Invalid student_register_id provided"
+            )
+
+        unit = get_first(vulcan._units, id=register.periods[0].unit_id)
+
+        return cls(vulcan, instance, headers, school_name, register, unit)
 
     async def get_grades(self, *, period: int = 0) -> GradesData:
         period_id = self.register.periods[period].id
@@ -167,3 +202,6 @@ class Student:
     async def get_school_announcements(self) -> list[SchoolAnnouncement]:
         # TODO: only return ones relevant to this student
         return await self._uonetplus.get_school_announcements()
+
+    async def refresh_session(self):
+        await self._http.uczen_refresh_session(self._symbol, self._instance.id)

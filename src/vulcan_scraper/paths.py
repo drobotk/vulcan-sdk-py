@@ -30,3 +30,4 @@ class UCZEN:
     PLANZAJEC_GET: str = "/{SYMBOL}/{SCHOOLID}/PlanZajec.mvc/Get"
     SPRAWDZIANY_GET: str = "/{SYMBOL}/{SCHOOLID}/Sprawdziany.mvc/Get"
     HOMEWORK_GET: str = "/{SYMBOL}/{SCHOOLID}/Homework.mvc/Get"
+    REFRESHSESSION: str = "/{SYMBOL}/{SCHOOLID}/Home.mvc/RefreshSession"
