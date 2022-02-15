@@ -5,7 +5,7 @@ from datetime import datetime
 
 async def main():
     vulcan = VulcanWeb(
-        host="fakelog.tk",  # Vulcan e-register host name, eg. "fakelog.cf", "vulcan.net.pl"
+        host="fakelog.cf",  # Vulcan e-register host name, eg. "fakelog.cf", "vulcan.net.pl"
         ssl=False,  # Whether or not to use https
         email="jan@fakelog.cf",
         password="jan123",
@@ -26,13 +26,12 @@ async def main():
         # use the first student; this will usually be the current year student
         student = students[0]
 
-        print("\n\t--- Lucky Number ---")
         number = await student.get_lucky_number()
+        print("\n\t--- Lucky Number ---")
         print(number)
 
         # fetching grades of a student for a given period index
         data = await student.get_grades(period=0)
-
         print("\n\t--- Grades ---")
         for subject in data.subjects:
             grades = "  ".join([g.entry for g in subject.grades])
@@ -57,20 +56,25 @@ async def main():
         for achievement in data.achievements:
             print(f"# {achievement}")
 
-        print("\n\t--- Meetings ---")
         meetings = await student.get_meetings()
+        print("\n\t--- Meetings ---")
         for m in meetings:
             print(f"# {m.date} | {m.title} | {m.topic}")
 
-        print("\n\t--- Exams ---")
         exams = await student.get_exams(datetime.now())
+        print("\n\t--- Exams ---")
         for e in exams:
             print(f"# {e.date.date()} | {e.type}: {e.subject} - {e.description}")
 
-        print("\n\t--- Homework ---")
         homework = await student.get_homework(datetime.now())
+        print("\n\t--- Homework ---")
         for h in homework:
             print(f"# {h.date.date()} | {h.subject} - {h.description}")
+
+        announcements = await student.get_school_announcements()
+        print("\n\t--- Announcements ---")
+        for a in announcements:
+            print(f"# {a.date.date()} | {a.subject}")
 
 
 if __name__ == "__main__":
